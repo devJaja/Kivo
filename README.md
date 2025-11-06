@@ -1,109 +1,166 @@
-🧠 Kivo — AI-Powered Smart Wallet with Account Abstraction
-⚡ Built on Base | Powered by ERC-4337
-📖 Overview
+# 🚀 Kivo - Your Smart Wallet for the Future of Web3
 
-Kivo is an autonomous smart wallet designed to simplify user experience and optimize transactions across multiple chains.
-It leverages Account Abstraction (AA) to eliminate the complexities of private keys and gas management — making Web3 more accessible.
+> **Making crypto simple, secure, and intelligent**
 
-Kivo’s ultimate goal is to integrate an autonomous AI agent that monitors and recommends the best chains for arbitrage, ensuring users always transact efficiently and profitably.
+---
 
-🚀 Phase 1: Account Abstraction Foundation
+## 💡 What is Kivo?
 
-Before AI integration, Kivo focuses on building a secure, modular smart wallet infrastructure based on ERC-4337.
+**Kivo** is not just another crypto wallet — it's your intelligent companion in the Web3 world. Forget about confusing private keys, expensive gas fees, and complex transactions. Kivo handles all of that for you.
 
-🎯 Core Objectives
+### ✨ Why Choose Kivo?
 
-Implement smart accounts via EntryPoint.
+- 🔐 **No More Seed Phrases** - Say goodbye to 12-word nightmares. Your wallet, simplified.
+- ⛽ **Gasless Transactions** - We cover the fees so you don't have to worry about them.
+- 🤖 **AI-Powered (Coming Soon)** - Smart recommendations for the best chains and opportunities.
+- 🌉 **Multi-Chain Ready** - Seamlessly operate across different blockchains.
+- 🎯 **Built for Everyone** - Whether you're a crypto newbie or a DeFi expert, Kivo works for you.
 
-Deploy on Base L2 for scalability and low fees.
+---
 
-Support Paymaster sponsorship for gasless transactions.
+## 🎬 How It Works
 
-Enable UserOperation relaying through a bundler.
+```
+You → Kivo Wallet → Smart Contract Magic → Blockchain
+                           ↓
+                    AI Optimization (Phase 2)
+```
 
-Provide an intuitive frontend for users to create and manage wallets.
+1. **Create Your Wallet** - One click, no complicated setup
+2. **Make Transactions** - Send, receive, swap — all without gas worries
+3. **Let AI Optimize** - (Coming soon) Get smart recommendations for arbitrage and best routes
 
-🧩 System Architecture
-Frontend (React + Wagmi + Viem)
-        │
-        ▼
-Backend / Relayer (Node.js + Pimlico / Stackup SDK)
-        │
-        ▼
-Smart Contracts (Solidity 0.8.27)
-   ├── KivoSmartAccount.sol
-   ├── KivoFactory.sol
-   └── EntryPoint.sol (ERC-4337 standard)
-        │
-        ▼
-Base L2 (Testnet / Mainnet)
+---
 
-⚙️ Tech Stack
-Layer	Technologies
-Smart Contract	Solidity v0.8.27, EntryPoint v0.6, Base L2
-Backend / Infra	Node.js v20, Express.js, Pimlico / Stackup Bundler, Paymaster
-Frontend	React.js, TailwindCSS, Wagmi, Viem
-Deployment	Hardhat, Base Sepolia Testnet
-Version Control	GitHub
-👩‍💻 Team Roles & Responsibilities
-Role	Name	Focus	Deliverable
-Dev 1 — Smart Contract Engineer	(Solidity Dev)	Build and deploy core contracts (KivoSmartAccount.sol, KivoFactory.sol), integrate with EntryPoint, test on Base testnet.	✅ Functional smart account deployed and verified on Base testnet.
-Dev 2 — Backend / Infra Engineer	(Node.js + Web3 Dev)	Configure bundler + paymaster (Pimlico / Stackup), implement relayer logic, test UserOps end-to-end.	✅ UserOps relayed successfully; Paymaster covers gas.
-Dev 3 — Frontend Engineer	(React + Wagmi Dev)	Create a UI for wallet creation, address display, and transaction trigger. Integrate Base testnet RPCs.	✅ Frontend allows wallet creation and sample transaction execution.
-🧠 Future Integration — Kivo AI
+## 🏗️ What We're Building
 
-Once the AA layer is stable, Kivo AI will be introduced as an autonomous layer that:
+### **Phase 1: Smart Wallet Foundation** (Current)
 
-Monitors on-chain liquidity across multiple L2s.
+We're laying the groundwork with cutting-edge Account Abstraction technology:
 
-Detects profitable arbitrage opportunities.
+- ✅ Smart contract wallets that work like magic
+- ✅ Built on Base L2 for lightning-fast, cheap transactions
+- ✅ Sponsored transactions (we pay the gas!)
+- ✅ Beautiful, intuitive interface
 
-Executes or recommends optimal routes.
+### **Phase 2: AI Intelligence** (Next)
 
-Ensures security using wallet activity heuristics.
+Your wallet will become your financial advisor:
 
-🛠️ Setup Instructions
-1. Clone Repository
-git clone https://github.com/<your-org>/kivo.git
+- 🔍 Monitors opportunities across multiple chains
+- 💰 Finds profitable arbitrage routes
+- 🎯 Executes or recommends optimal strategies
+- 🛡️ Keeps your assets secure with smart risk management
+
+---
+
+## 🛠️ Tech Stack
+
+We use the best tools in the industry:
+
+| Layer | Technology |
+|-------|-----------|
+| 🎨 **Frontend** | React, TailwindCSS, Wagmi, Viem |
+| ⚙️ **Backend** | Node.js, Express, Pimlico/Stackup |
+| 📜 **Smart Contracts** | Solidity 0.8.27, ERC-4337 |
+| 🌐 **Blockchain** | Base L2 (Ethereum Layer 2) |
+
+---
+
+## 🚀 Quick Start
+
+### For Users
+
+**Coming Soon!** We're building a seamless web app where you can:
+1. Create your wallet instantly
+2. Start transacting without setup
+3. Experience Web3 the way it should be
+
+### For Developers
+
+Want to contribute or run Kivo locally?
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/YOUR_USERNAME/kivo.git
 cd kivo
 
-2. Install Dependencies
+# 2. Install dependencies
 npm install
 
-3. Environment Setup
+# 3. Set up environment variables
+cp .env.example .env
+# Add your keys to .env
 
-Create a .env file and include:
-
-PRIVATE_KEY=<YourTestPrivateKey>
-RPC_URL=<Base_Sepolia_RPC>
-BUNDLER_URL=<Pimlico_or_Stackup_URL>
-PAYMASTER_KEY=<Paymaster_API_Key>
-
-4. Compile & Deploy Contracts
+# 4. Deploy contracts
 npx hardhat compile
 npx hardhat run scripts/deploy.js --network baseSepolia
 
-5. Run Backend
+# 5. Start the backend
 npm run server
 
-6. Launch Frontend
+# 6. Launch the frontend
 npm run dev
+```
 
-✅ Success Criteria
+**Need help?** Check out our [Documentation](link) or join our [Discord](link)
 
-Smart wallets can be created and interacted with via UI.
+---
 
-UserOps successfully execute through EntryPoint.
+## 🎯 Our Mission
 
-Paymaster sponsorship works as expected.
+> **To make Web3 accessible to everyone by removing technical barriers and adding intelligent automation.**
 
-Base testnet transactions are confirmed via explorer.
+We believe crypto should be:
+- **Simple** - No PhD required
+- **Secure** - Your assets, protected
+- **Smart** - AI working for you
+- **Accessible** - For everyone, everywhere
 
-🔮 Vision
+---
 
-Kivo aims to become the next-generation AI-native wallet — where users don’t just hold assets, but act intelligently on-chain.
-Through Account Abstraction and AI-driven optimization, Kivo bridges the gap between Web3 autonomy and financial intelligence.
+## 👥 The Team
 
-🧾 License
+We're a passionate group of blockchain enthusiasts, smart contract wizards, and UX designers working to revolutionize how people interact with Web3.
+
+| Role | Focus |
+|------|-------|
+| 🔧 **Smart Contract Team** | Building bulletproof wallet infrastructure |
+| 🌐 **Backend Team** | Creating seamless transaction relaying |
+| 🎨 **Frontend Team** | Designing beautiful user experiences |
+
+---
+
+## 🗺️ Roadmap
+
+- [x] **Q1 2025** - Account Abstraction MVP
+- [ ] **Q2 2025** - Base Mainnet Launch
+- [ ] **Q3 2025** - AI Agent Integration
+- [ ] **Q4 2025** - Multi-chain Expansion
+
+---
+
+## 🤝 Join the Revolution
+
+Want to be part of the future of Web3?
+
+- ⭐ **Star this repo** to show your support
+- 🐛 **Report bugs** - Help us improve
+- 💬 **Join our community** - [Discord](link) | [Twitter](link)
+- 🤲 **Contribute** - PRs welcome!
+
+---
+
+## 📜 License
 
 MIT © 2025 Kivo Labs
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the Web3 Community**
+
+[Website](link) • [Documentation](link) • [Discord](link) • [Twitter](link)
+
+</div>
