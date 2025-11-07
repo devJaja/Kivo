@@ -15,5 +15,9 @@
     "hardhat": "^3.0.12",
     "mocha": "^11.7.5",
     "typescript": "~5.8.0"
+  },
+  "dependencies": {
+    "@account-abstraction/contracts": "^0.8.0",
+    "@openzeppelin/contracts": "^5.4.0"
   }
 }
