@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import { KivoAccountInitialized, TransactionExecuted, BatchTransactionExecuted, OwnerAdded, OwnerRemoved, ThresholdUpdated, RecoveryInProgress, RecoveryCancelled, RecoveryCompleted } from "./lib/Events.sol";
-import { InvalidEntryPoint, InvalidOwner, CallFailed, ArrayLengthMismatch, OnlyEntryPoint, NotOwner, NotGuardian, RecoveryNotActive, InvalidGuardian, GuardiansNotSet } from "./lib/Errors.sol";
-import { SocialRecovery } from "./lib/SocialRecovery.sol";
+import {KivoAccountInitialized, TransactionExecuted, BatchTransactionExecuted, OwnerAdded, OwnerRemoved, ThresholdUpdated, RecoveryInProgress, RecoveryCancelled, RecoveryCompleted} from "./lib/Events.sol";
+import {InvalidEntryPoint, InvalidOwner, CallFailed, ArrayLengthMismatch, OnlyEntryPoint, NotOwner, NotGuardian, RecoveryNotActive, InvalidGuardian, GuardiansNotSet} from "./lib/Errors.sol";
+import {SocialRecovery} from "./lib/SocialRecovery.sol";
 import "@account-abstraction/contracts/core/BaseAccount.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
@@ -20,7 +20,7 @@ contract KivoSmartAccount is BaseAccount {
     using MessageHashUtils for bytes32;
 
     IEntryPoint private immutable _entryPoint;
-    
+
     address[] public owners;
     mapping(address => bool) public isOwner;
     uint256 public threshold;
@@ -35,15 +35,41 @@ contract KivoSmartAccount is BaseAccount {
     constructor(address entryPointAddress, address initialOwner) {
         if (entryPointAddress == address(0)) revert InvalidEntryPoint();
         if (initialOwner == address(0)) revert InvalidOwner();
-        
+
         _entryPoint = IEntryPoint(entryPointAddress);
         owners.push(initialOwner);
         isOwner[initialOwner] = true;
         threshold = 1;
-        
+
         emit KivoAccountInitialized(_entryPoint, initialOwner);
         emit OwnerAdded(initialOwner);
         emit ThresholdUpdated(1);
+    }
+
+    function _validateSignature(
+        PackedUserOperation calldata userOp,
+        bytes32 userOpHash
+    ) internal view override returns (uint256 validationData) {
+        bytes32 hash = userOpHash.toEthSignedMessageHash();
+        address recovered = hash.recover(userOp.signature);
+
+        if (recovered != owner()) {
+            return 1;
+        }
+        return 0;
+    }
+
+    function _validateUserOp(
+        PackedUserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 missingWalletFunds
+    ) internal override returns (uint256 validationData) {
+        require(
+            userOp.paymasterAndData.length > 0,
+            "Must use paymaster for gas"
+        );
+
+        return super._validateUserOp(userOp, userOpHash, missingWalletFunds);
     }
 
     /**
@@ -81,7 +107,7 @@ contract KivoSmartAccount is BaseAccount {
         bytes[] calldata datas
     ) external {
         _requireFromEntryPoint();
-        
+
         if (targets.length != values.length || targets.length != datas.length) {
             revert ArrayLengthMismatch();
         }
@@ -89,7 +115,7 @@ contract KivoSmartAccount is BaseAccount {
         for (uint256 i = 0; i < targets.length; i++) {
             _call(targets[i], values[i], datas[i]);
         }
-        
+
         emit BatchTransactionExecuted(targets.length);
     }
 
@@ -101,7 +127,7 @@ contract KivoSmartAccount is BaseAccount {
         _requireFromEntryPoint();
         if (!isOwner[msg.sender]) revert NotOwner();
         if (newOwner == address(0) || isOwner[newOwner]) return;
-        
+
         owners.push(newOwner);
         isOwner[newOwner] = true;
         emit OwnerAdded(newOwner);
@@ -163,11 +189,11 @@ contract KivoSmartAccount is BaseAccount {
     function completeRecovery() external {
         SocialRecovery.completeRecovery(recoveryData, address(this));
         address newOwner = recoveryData.recoveries[address(this)].newOwner;
-        
+
         for (uint i = 0; i < owners.length; i++) {
             isOwner[owners[i]] = false;
         }
-        
+
         owners = new address[](0);
         owners.push(newOwner);
         isOwner[newOwner] = true;
@@ -189,9 +215,13 @@ contract KivoSmartAccount is BaseAccount {
         bytes32 hash = userOpHash.toEthSignedMessageHash();
         uint256 validSignatures;
 
-        address[] memory recoveredOwners = new address[](userOp.signature.length / 65);
+        address[] memory recoveredOwners = new address[](
+            userOp.signature.length / 65
+        );
         for (uint256 i = 0; i < recoveredOwners.length; i++) {
-            recoveredOwners[i] = hash.recover(bytes.concat(userOp.signature[i * 65 : (i + 1) * 65]));
+            recoveredOwners[i] = hash.recover(
+                bytes.concat(userOp.signature[i * 65:(i + 1) * 65])
+            );
         }
 
         for (uint256 i = 0; i < recoveredOwners.length; i++) {
