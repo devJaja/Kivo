@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import { KivoAccountInitialized, TransactionExecuted, BatchTransactionExecuted } from "./lib/Events.sol";
-import { InvalidEntryPoint, InvalidOwner, CallFailed, ArrayLengthMismatch, OnlyEntryPoint } from "./lib/Errors.sol";
+import {KivoAccountInitialized, TransactionExecuted, BatchTransactionExecuted} from "./lib/Events.sol";
+import {InvalidEntryPoint, InvalidOwner, CallFailed, ArrayLengthMismatch, OnlyEntryPoint} from "./lib/Errors.sol";
 import "@account-abstraction/contracts/core/BaseAccount.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -19,7 +19,7 @@ contract KivoSmartAccount is BaseAccount, Ownable {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
-    IEntryPoint private immutable _entryPoint;        
+    IEntryPoint private immutable _entryPoint;
 
     /**
      * @notice Constructor for KivoSmartAccount
@@ -29,9 +29,35 @@ contract KivoSmartAccount is BaseAccount, Ownable {
     constructor(address entryPointAddress, address owner) Ownable(owner) {
         if (entryPointAddress == address(0)) revert InvalidEntryPoint();
         if (owner == address(0)) revert InvalidOwner();
-        
+
         _entryPoint = IEntryPoint(entryPointAddress);
         emit KivoAccountInitialized(_entryPoint, owner);
+    }
+
+    function _validateSignature(
+        PackedUserOperation calldata userOp,
+        bytes32 userOpHash
+    ) internal view override returns (uint256 validationData) {
+        bytes32 hash = userOpHash.toEthSignedMessageHash();
+        address recovered = hash.recover(userOp.signature);
+
+        if (recovered != owner()) {
+            return 1;
+        }
+        return 0;
+    }
+
+    function _validateUserOp(
+        PackedUserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 missingWalletFunds
+    ) internal override returns (uint256 validationData) {
+        require(
+            userOp.paymasterAndData.length > 0,
+            "Must use paymaster for gas"
+        );
+
+        return super._validateUserOp(userOp, userOpHash, missingWalletFunds);
     }
 
     /**
@@ -69,7 +95,7 @@ contract KivoSmartAccount is BaseAccount, Ownable {
         bytes[] calldata datas
     ) external {
         _requireFromEntryPoint();
-        
+
         if (targets.length != values.length || targets.length != datas.length) {
             revert ArrayLengthMismatch();
         }
@@ -77,7 +103,7 @@ contract KivoSmartAccount is BaseAccount, Ownable {
         for (uint256 i = 0; i < targets.length; i++) {
             _call(targets[i], values[i], datas[i]);
         }
-        
+
         emit BatchTransactionExecuted(targets.length);
     }
 
@@ -93,7 +119,7 @@ contract KivoSmartAccount is BaseAccount, Ownable {
     ) internal view override returns (uint256 validationData) {
         bytes32 hash = userOpHash.toEthSignedMessageHash();
         address recovered = hash.recover(userOp.signature);
-        
+
         if (recovered != owner()) {
             return 1; // SIG_VALIDATION_FAILED
         }
@@ -137,7 +163,6 @@ contract KivoSmartAccount is BaseAccount, Ownable {
         entryPoint().withdrawTo(withdrawAddress, amount);
     }
 
-   
     function getDeposit() public view returns (uint256) {
         return entryPoint().balanceOf(address(this));
     }
