@@ -3,8 +3,8 @@ import { network } from "hardhat";
 
 const { ethers } = await network.connect();
 
-describe("Counter", function () {
-  it("Should emit the Increment event when calling the inc() function", async function () {
+describe("KivoSmartAccount", function () {
+  it("Should create account and execute transaction", async function () {
     const counter = await ethers.deployContract("Counter");
 
     await expect(counter.inc()).to.emit(counter, "Increment").withArgs(1n);

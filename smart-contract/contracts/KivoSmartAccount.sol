@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import { KivoAccountInitialized, TransactionExecuted, BatchTransactionExecuted } from "./lib/Events.sol";
-import { InvalidEntryPoint, InvalidOwner, CallFailed, ArrayLengthMismatch, OnlyEntryPoint } from "./lib/Errors.sol";
+import { KivoAccountInitialized, TransactionExecuted, BatchTransactionExecuted, OwnerAdded, OwnerRemoved, ThresholdUpdated, RecoveryInProgress, RecoveryCancelled, RecoveryCompleted } from "./lib/Events.sol";
+import { InvalidEntryPoint, InvalidOwner, CallFailed, ArrayLengthMismatch, OnlyEntryPoint, NotOwner, NotGuardian, RecoveryNotActive, InvalidGuardian, GuardiansNotSet } from "./lib/Errors.sol";
+import { SocialRecovery } from "./lib/SocialRecovery.sol";
 import "@account-abstraction/contracts/core/BaseAccount.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@account-abstraction/contracts/interfaces/PackedUserOperation.sol";
@@ -12,26 +12,38 @@ import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
 /**
  * @title KivoSmartAccount
- * @notice Smart account wallet implementing ERC-4337 standard
- * @dev Extends BaseAccount for account abstraction functionality
+ * @notice Smart account wallet implementing ERC-4337 standard with multi-owner and social recovery capabilities.
+ * @dev Extends BaseAccount for account abstraction functionality.
  */
-contract KivoSmartAccount is BaseAccount, Ownable {
+contract KivoSmartAccount is BaseAccount {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
-    IEntryPoint private immutable _entryPoint;        
+    IEntryPoint private immutable _entryPoint;
+    
+    address[] public owners;
+    mapping(address => bool) public isOwner;
+    uint256 public threshold;
+
+    SocialRecovery.Data internal recoveryData;
 
     /**
      * @notice Constructor for KivoSmartAccount
      * @param entryPointAddress Address of the EntryPoint contract
-     * @param owner Address of the account owner
+     * @param initialOwner Address of the initial account owner
      */
-    constructor(address entryPointAddress, address owner) Ownable(owner) {
+    constructor(address entryPointAddress, address initialOwner) {
         if (entryPointAddress == address(0)) revert InvalidEntryPoint();
-        if (owner == address(0)) revert InvalidOwner();
+        if (initialOwner == address(0)) revert InvalidOwner();
         
         _entryPoint = IEntryPoint(entryPointAddress);
-        emit KivoAccountInitialized(_entryPoint, owner);
+        owners.push(initialOwner);
+        isOwner[initialOwner] = true;
+        threshold = 1;
+        
+        emit KivoAccountInitialized(_entryPoint, initialOwner);
+        emit OwnerAdded(initialOwner);
+        emit ThresholdUpdated(1);
     }
 
     /**
@@ -82,6 +94,89 @@ contract KivoSmartAccount is BaseAccount, Ownable {
     }
 
     /**
+     * @notice Add a new owner to the account
+     * @param newOwner The address of the new owner
+     */
+    function addOwner(address newOwner) external {
+        _requireFromEntryPoint();
+        if (!isOwner[msg.sender]) revert NotOwner();
+        if (newOwner == address(0) || isOwner[newOwner]) return;
+        
+        owners.push(newOwner);
+        isOwner[newOwner] = true;
+        emit OwnerAdded(newOwner);
+    }
+
+    /**
+     * @notice Remove an owner from the account
+     * @param ownerToRemove The address of the owner to remove
+     */
+    function removeOwner(address ownerToRemove) external {
+        _requireFromEntryPoint();
+        if (!isOwner[msg.sender]) revert NotOwner();
+        if (ownerToRemove == address(0) || !isOwner[ownerToRemove]) return;
+
+        for (uint i = 0; i < owners.length; i++) {
+            if (owners[i] == ownerToRemove) {
+                owners[i] = owners[owners.length - 1];
+                owners.pop();
+                break;
+            }
+        }
+        isOwner[ownerToRemove] = false;
+        emit OwnerRemoved(ownerToRemove);
+    }
+
+    /**
+     * @notice Update the signature threshold
+     * @param newThreshold The new number of signatures required
+     */
+    function updateThreshold(uint256 newThreshold) external {
+        _requireFromEntryPoint();
+        if (!isOwner[msg.sender]) revert NotOwner();
+        if (newThreshold == 0 || newThreshold > owners.length) return;
+
+        threshold = newThreshold;
+        emit ThresholdUpdated(newThreshold);
+    }
+
+    function addGuardian(address guardian) external {
+        _requireFromEntryPoint();
+        if (!isOwner[msg.sender]) revert NotOwner();
+        SocialRecovery.addGuardian(recoveryData, address(this), guardian);
+    }
+
+    function removeGuardian(address guardian) external {
+        _requireFromEntryPoint();
+        if (!isOwner[msg.sender]) revert NotOwner();
+        SocialRecovery.removeGuardian(recoveryData, address(this), guardian);
+    }
+
+    function initiateRecovery(address newOwner) external {
+        SocialRecovery.initiateRecovery(recoveryData, address(this), newOwner);
+    }
+
+    function cancelRecovery() external {
+        SocialRecovery.cancelRecovery(recoveryData, address(this));
+    }
+
+    function completeRecovery() external {
+        SocialRecovery.completeRecovery(recoveryData, address(this));
+        address newOwner = recoveryData.recoveries[address(this)].newOwner;
+        
+        for (uint i = 0; i < owners.length; i++) {
+            isOwner[owners[i]] = false;
+        }
+        
+        owners = new address[](0);
+        owners.push(newOwner);
+        isOwner[newOwner] = true;
+        threshold = 1;
+
+        emit RecoveryCompleted(address(this), newOwner);
+    }
+
+    /**
      * @notice Validate signature for UserOperation
      * @param userOp The user operation to validate
      * @param userOpHash Hash of the user operation
@@ -92,9 +187,20 @@ contract KivoSmartAccount is BaseAccount, Ownable {
         bytes32 userOpHash
     ) internal view override returns (uint256 validationData) {
         bytes32 hash = userOpHash.toEthSignedMessageHash();
-        address recovered = hash.recover(userOp.signature);
-        
-        if (recovered != owner()) {
+        uint256 validSignatures;
+
+        address[] memory recoveredOwners = new address[](userOp.signature.length / 65);
+        for (uint256 i = 0; i < recoveredOwners.length; i++) {
+            recoveredOwners[i] = hash.recover(bytes.concat(userOp.signature[i * 65 : (i + 1) * 65]));
+        }
+
+        for (uint256 i = 0; i < recoveredOwners.length; i++) {
+            if (isOwner[recoveredOwners[i]]) {
+                validSignatures++;
+            }
+        }
+
+        if (validSignatures < threshold) {
             return 1; // SIG_VALIDATION_FAILED
         }
         return 0; // SIG_VALIDATION_SUCCESS
@@ -133,11 +239,12 @@ contract KivoSmartAccount is BaseAccount, Ownable {
     function withdrawDepositTo(
         address payable withdrawAddress,
         uint256 amount
-    ) public onlyOwner {
+    ) public {
+        _requireFromEntryPoint();
+        if (!isOwner[msg.sender]) revert NotOwner();
         entryPoint().withdrawTo(withdrawAddress, amount);
     }
 
-   
     function getDeposit() public view returns (uint256) {
         return entryPoint().balanceOf(address(this));
     }
