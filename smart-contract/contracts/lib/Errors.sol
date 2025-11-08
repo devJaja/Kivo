@@ -7,3 +7,8 @@ error CallFailed(address target, uint256 value);
 error ArrayLengthMismatch();
 error OnlyEntryPoint();
 error AccountAlreadyExists(address account);
+error NotOwner();
+error NotGuardian();
+error RecoveryNotActive();
+error InvalidGuardian();
+error GuardiansNotSet();
