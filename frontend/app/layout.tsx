@@ -2,6 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
+import { Providers } from "@/components/provider"
+import AIAssistant from "@/components/ai-assistant"
 
 export const metadata: Metadata = {
   title: "Kivo - Smart Wallet",
@@ -34,7 +36,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased bg-background text-foreground">
-        {children}
+        <Providers>
+          {children}
+          <AIAssistant />
+        </Providers>
         <Analytics />
       </body>
     </html>
