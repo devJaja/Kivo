@@ -1,24 +1,24 @@
-# 🚀 Kivo - Your Smart Wallet for the Future of Web3
+#  Kivo - Your Smart Wallet for the Future of Web3
 
 > **Making crypto simple, secure, and intelligent**
 
 ---
 
-## 💡 What is Kivo?
+##  What is Kivo?
 
 **Kivo** is not just another crypto wallet — it's your intelligent companion in the Web3 world. Forget about confusing private keys, expensive gas fees, and complex transactions. Kivo handles all of that for you.
 
-### ✨ Why Choose Kivo?
+###  Why Choose Kivo?
 
-- 🔐 **No More Seed Phrases** - Say goodbye to 12-word nightmares. Your wallet, simplified.
-- ⛽ **Gasless Transactions** - We cover the fees so you don't have to worry about them.
-- 🤖 **AI-Powered (Coming Soon)** - Smart recommendations for the best chains and opportunities.
-- 🌉 **Multi-Chain Ready** - Seamlessly operate across different blockchains.
-- 🎯 **Built for Everyone** - Whether you're a crypto newbie or a DeFi expert, Kivo works for you.
+-  **No More Seed Phrases** - Say goodbye to 12-word nightmares. Your wallet, simplified.
+-  **Gasless Transactions** - We cover the fees so you don't have to worry about them.
+-  **AI-Powered** - Smart recommendations for the best chains and opportunities.
+-  **Multi-Chain Ready** - Seamlessly operate across different blockchains.
+-  **Built for Everyone** - Whether you're a crypto newbie or a DeFi expert, Kivo works for you.
 
 ---
 
-## 🎬 How It Works
+##  How It Works
 
 ```
 You → Kivo Wallet → Smart Contract Magic → Blockchain
@@ -28,11 +28,11 @@ You → Kivo Wallet → Smart Contract Magic → Blockchain
 
 1. **Create Your Wallet** - One click, no complicated setup
 2. **Make Transactions** - Send, receive, swap — all without gas worries
-3. **Let AI Optimize** - (Coming soon) Get smart recommendations for arbitrage and best routes
+3. **Let AI Optimize** -  Get smart recommendations for arbitrage and best routes
 
 ---
 
-## 🏗️ What We're Building
+##  What We're Building
 
 ### **Phase 1: Smart Wallet Foundation** (Current)
 
@@ -47,27 +47,27 @@ We're laying the groundwork with cutting-edge Account Abstraction technology:
 
 Your wallet will become your financial advisor:
 
-- 🔍 Monitors opportunities across multiple chains
-- 💰 Finds profitable arbitrage routes
-- 🎯 Executes or recommends optimal strategies
-- 🛡️ Keeps your assets secure with smart risk management
+-  Monitors opportunities across multiple chains
+-  Finds profitable arbitrage routes
+-  Executes or recommends optimal strategies
+-  Keeps your assets secure with smart risk management
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 We use the best tools in the industry:
 
 | Layer | Technology |
 |-------|-----------|
-| 🎨 **Frontend** | React, TailwindCSS, Wagmi, Viem |
-| ⚙️ **Backend** | Node.js, Express, Pimlico/Stackup |
-| 📜 **Smart Contracts** | Solidity 0.8.27, ERC-4337 |
-| 🌐 **Blockchain** | Base L2 (Ethereum Layer 2) |
+|  **Frontend** | Next.js, TailwindCSS, Wagmi, Viem, privy |
+| **Backend** | Node.js, Express, Pimlico |
+|  **Smart Contracts** | Solidity 0.8.27, ERC-4337 |
+|  **Blockchain** | Base L2 (Ethereum Layer 2) |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### For Users
 
@@ -107,7 +107,7 @@ npm run dev
 
 ---
 
-## 🎯 Our Mission
+## Our Mission
 
 > **To make Web3 accessible to everyone by removing technical barriers and adding intelligent automation.**
 
@@ -119,19 +119,19 @@ We believe crypto should be:
 
 ---
 
-## 👥 The Team
+## The Team
 
 We're a passionate group of blockchain enthusiasts, smart contract wizards, and UX designers working to revolutionize how people interact with Web3.
 
 | Role | Focus |
 |------|-------|
-| 🔧 **Smart Contract Team** | Building bulletproof wallet infrastructure |
-| 🌐 **Backend Team** | Creating seamless transaction relaying |
-| 🎨 **Frontend Team** | Designing beautiful user experiences |
+|  **Smart Contract Team** | Building bulletproof wallet infrastructure |
+|  **Backend Team** | Creating seamless transaction relaying |
+|  **Frontend Team** | Designing beautiful user experiences |
 
 ---
 
-## 🗺️ Roadmap
+##  Roadmap
 
 - [x] **Q1 2025** - Account Abstraction MVP
 - [ ] **Q2 2025** - Base Mainnet Launch
@@ -140,18 +140,18 @@ We're a passionate group of blockchain enthusiasts, smart contract wizards, and 
 
 ---
 
-## 🤝 Join the Revolution
+## Join the Revolution
 
 Want to be part of the future of Web3?
 
-- ⭐ **Star this repo** to show your support
-- 🐛 **Report bugs** - Help us improve
-- 💬 **Join our community** - [Discord](link) | [Twitter](link)
-- 🤲 **Contribute** - PRs welcome!
+-  **Star this repo** to show your support
+-  **Report bugs** - Help us improve
+-  **Join our community** - [Discord](link) | [Twitter](link)
+-  **Contribute** - PRs welcome!
 
 ---
 
-## 📜 License
+##  License
 
 MIT © 2025 Kivo Labs
 
