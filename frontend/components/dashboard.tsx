@@ -1,51 +1,75 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { useRouter } from "next/navigation"
-import WalletCard from "@/components/wallet-card"
-import ActionButtons from "./actions-button"
-import TransactionList from "@/components/transaction-list"
-import SendModal from "@/components/modals/send-modal"
-import ReceiveModal from "@/components/modals/receive-modal"
-import SwapModal from "@/components/modals/swap-modal"
-import AIAssistant from "@/components/ai-assistant"
-import ChainSelector from "@/components/chain-selector"
-import ProfileIcon from "@/components/profile-icon"
-import { useWallet } from "@/hooks/user-privy-auth"
-import { useWalletStore } from "@/store/wallet-store"
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
+import WalletCard from "@/components/wallet-card";
+import ActionButtons from "./actions-button";
+import TransactionList from "@/components/transaction-list";
+import SendModal from "@/components/modals/send-modal";
+import ReceiveModal from "@/components/modals/receive-modal";
+import SwapModal from "@/components/modals/swap-modal";
+import ConfirmationModal from "@/components/modals/confirmation-modal";
+import AIAssistant from "@/components/ai-assistant";
+import ChainSelector from "@/components/chain-selector";
+import ProfileIcon from "@/components/profile-icon";
+import { usePrivy } from "@privy-io/react-auth";
+import { useBalance } from "wagmi";
+import { useWalletStore } from "@/store/wallet-store";
+import { LogOut } from "lucide-react";
+import { wagmiConfig } from "@/app/providers";
 
-type ModalType = "send" | "receive" | "swap" | null
+// 👇 Inline wallet interface to avoid types/privy.d.ts
+interface ExtendedWallet {
+  address: string;
+  chainId?: string;
+}
+
+type ModalType = "send" | "receive" | "swap" | null;
 
 export default function Dashboard() {
-  const router = useRouter()
-  const [activeModal, setActiveModal] = useState<ModalType>(null)
-  const { getChainBalances } = useWallet()
-  const { account, setAccount, setAuthenticated } = useWalletStore()
+  const router = useRouter();
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const { user, logout } = usePrivy();
+  const wallet = user?.wallet as ExtendedWallet | undefined; // ✅ Safe inline type fix
+  const { account, setAccount, setAuthenticated } = useWalletStore();
+
+  const chainIdStr = wallet?.chainId;
+  const currentChainId = chainIdStr ? parseInt(chainIdStr.split(":")[1]) : undefined;
+
+  const { data: balanceData } = useBalance({
+    address: wallet?.address as `0x${string}`,
+    chainId: currentChainId,
+    query: {
+      enabled: !!wallet?.address && !!chainIdStr,
+    },
+  });
 
   useEffect(() => {
-    // Initialize balances on mount
-    const balances = getChainBalances()
-    if (!Object.keys(balances).length) {
-      // TODO: Load real balances from relayer
+    if (balanceData) {
+      // Future: Load balances from relayer or backend
     }
-  }, [])
+  }, [balanceData]);
 
-  const handleLogout = () => {
-    setAccount(null)
-    setAuthenticated(false)
-    router.push("/")
-  }
+  const handleLogout = () => setShowLogoutConfirm(true);
 
-  const handleProfileClick = () => {
-    router.push("/profile")
-  }
+  const confirmLogout = async () => {
+    await logout();
+    setAccount(null);
+    setAuthenticated(false);
+    router.push("/");
+    setShowLogoutConfirm(false);
+  };
 
-  const chainBalances = getChainBalances()
-  const ethBalance = chainBalances.ETH || "0"
-  const totalBalance = Object.values(chainBalances).reduce((sum, val) => {
-    return sum + (Number.parseFloat(val) || 0)
-  }, 0)
+  const handleCancelLogout = () => setShowLogoutConfirm(false);
+
+  const handleProfileClick = () => router.push("/profile");
+
+  const ethBalance = balanceData?.formatted || "0";
+  const chainName =
+    wagmiConfig.chains.find((c) => c.id === currentChainId)?.name || "Unknown";
 
   return (
     <motion.div
@@ -93,7 +117,9 @@ export default function Dashboard() {
             transition={{ delay: 0.15, duration: 0.4 }}
             className="space-y-2"
           >
-            <p className="text-sm text-muted-foreground">Welcome back, {account?.name?.split(" ")[0]}</p>
+            <p className="text-sm text-muted-foreground">
+              Welcome back, {account?.name?.split(" ")[0]}
+            </p>
             <h1 className="text-3xl font-bold text-foreground">Your Wallet</h1>
           </motion.div>
 
@@ -103,7 +129,11 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
           >
-            <WalletCard balance={ethBalance} chain="" />
+            <WalletCard
+              balance={ethBalance}
+              chain={chainName}
+              address={account?.address || ""}
+            />
           </motion.div>
 
           {/* Action Buttons */}
@@ -148,12 +178,22 @@ export default function Dashboard() {
         {activeModal === "send" && <SendModal onClose={() => setActiveModal(null)} />}
         {activeModal === "receive" && <ReceiveModal onClose={() => setActiveModal(null)} />}
         {activeModal === "swap" && <SwapModal onClose={() => setActiveModal(null)} />}
+        {showLogoutConfirm && (
+          <ConfirmationModal
+            title="Confirm Logout"
+            description="Are you sure you want to log out of your Kivo wallet?"
+            icon={<LogOut size={32} />}
+            onConfirm={confirmLogout}
+            onCancel={handleCancelLogout}
+            confirmText="Log Out"
+          />
+        )}
       </AnimatePresence>
 
       {/* AI Assistant */}
       <AIAssistant />
     </motion.div>
-  )
+  );
 }
 
 function FeatureCard({ icon, title }: { icon: string; title: string }) {
@@ -165,5 +205,5 @@ function FeatureCard({ icon, title }: { icon: string; title: string }) {
       <p className="text-2xl mb-1">{icon}</p>
       <p className="text-xs font-semibold text-foreground">{title}</p>
     </motion.div>
-  )
+  );
 }

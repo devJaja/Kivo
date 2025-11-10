@@ -7,9 +7,10 @@ import { Copy, Eye, EyeOff } from "lucide-react"
 interface WalletCardProps {
   balance: string
   chain: string
+  address: string
 }
 
-export default function WalletCard({ balance, chain }: WalletCardProps) {
+export default function WalletCard({ balance, chain, address }: WalletCardProps) {
   const [displayBalance, setDisplayBalance] = useState("0")
   const [showBalance, setShowBalance] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -34,7 +35,7 @@ export default function WalletCard({ balance, chain }: WalletCardProps) {
   }, [balance])
 
   const handleCopy = () => {
-    navigator.clipboard.writeText("0x742d35Cc6634C0532925a3b844Bc9e7595f42bE")
+    navigator.clipboard.writeText(address)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -44,6 +45,10 @@ export default function WalletCard({ balance, chain }: WalletCardProps) {
     ethereum: "◆",
     polygon: "🟣",
     optimism: "🔴",
+  }
+
+  const formatAddress = (addr: string) => {
+    return `${addr.slice(0, 6)}...${addr.slice(-5)}`
   }
 
   return (
@@ -105,7 +110,7 @@ export default function WalletCard({ balance, chain }: WalletCardProps) {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <p className="text-xs text-muted-foreground font-mono">0x742d...f42bE</p>
+            <p className="text-xs text-muted-foreground font-mono">{formatAddress(address)}</p>
             <button onClick={handleCopy} className="p-1.5 hover:bg-secondary/30 rounded-lg transition-colors">
               <Copy size={16} className={`transition-colors ${copied ? "text-primary" : "text-muted-foreground"}`} />
             </button>
