@@ -1,89 +1,113 @@
 "use client"
 
-import { motion } from "framer-motion"
-import WaterButton from "@/components/water-button"
+import { motion, AnimatePresence } from "framer-motion"
+import { ArrowRight } from "lucide-react"
+import { useState } from "react"
 
 interface HeroWelcomeProps {
   onGetStarted: () => void
 }
 
 export default function HeroWelcome({ onGetStarted }: HeroWelcomeProps) {
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [isHover, setIsHover] = useState(false)
+  const [isCollapsing, setIsCollapsing] = useState(false)
+
+  const handleGetStartedClick = () => {
+    if (isAnimating || isCollapsing) return
+    setIsAnimating(true)
+
+    // Start the collapse animation
+    setTimeout(() => {
+      setIsCollapsing(true)
+      setIsAnimating(false)
+
+      // After the collapse finishes, call onGetStarted
+      setTimeout(() => {
+        onGetStarted()
+      }, 800) // delay matches collapse animation
+    }, 400)
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      className="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-secondary/5 px-4"
-    >
-      <div className="max-w-md w-full space-y-8 text-center">
-        {/* Logo Animation */}
+    <AnimatePresence>
+      {!isCollapsing && (
         <motion.div
-          initial={{ scale: 0, rotate: -180, opacity: 0 }}
-          animate={{ scale: 1, rotate: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 100, damping: 15 }}
-          className="flex justify-center"
-        >
-          <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary/70 rounded-3xl flex items-center justify-center shadow-2xl">
-            <span className="text-5xl font-black text-primary-foreground">K</span>
-          </div>
-        </motion.div>
-
-        {/* Heading */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="space-y-3"
-        >
-          <h1 className="text-5xl font-bold text-foreground text-balance">Kivo Smart Wallet</h1>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            Account Abstraction meets AI. No seed phrases. Pure simplicity.
-          </p>
-        </motion.div>
-
-        {/* Features */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35, duration: 0.6 }}
-          className="space-y-2 py-4"
-        >
-          <div className="flex items-center justify-center gap-3 text-sm">
-            <span className="text-primary font-semibold">✓</span>
-            <span className="text-foreground">No seed phrases or complex setup</span>
-          </div>
-          <div className="flex items-center justify-center gap-3 text-sm">
-            <span className="text-primary font-semibold">✓</span>
-            <span className="text-foreground">Multi-chain supported</span>
-          </div>
-          <div className="flex items-center justify-center gap-3 text-sm">
-            <span className="text-primary font-semibold">✓</span>
-            <span className="text-foreground">AI-powered recommendations</span>
-          </div>
-        </motion.div>
-
-        {/* CTA Button */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-        >
-          <WaterButton onClick={onGetStarted} variant="primary" size="lg" className="w-full">
-            Get Started
-          </WaterButton>
-        </motion.div>
-
-        {/* Footer */}
-        <motion.div
+          key="hero"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.6 }}
-          className="pt-6 text-xs text-muted-foreground space-y-2"
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{
+            opacity: 0,
+            scale: 0.7,
+            y: 200, // move downward like collapsing
+            transition: { duration: 0.8, ease: "easeInOut" },
+          }}
+          transition={{ duration: 0.8 }}
+          className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#ddfef8] px-4 sm:px-6 md:px-8"
         >
-          <p>Powered by Account Abstraction</p>
-          <p>Secured by Privy</p>
+          {/* Background shapes */}
+          <div className="absolute top-0 right-0 w-[80%] sm:w-[70%] h-[60%] sm:h-[70%] bg-[#ace6f2] rotate-[10deg] translate-x-1/4 -translate-y-1/4 rounded-tr-[3rem] sm:rounded-tr-[4rem]" />
+          <div className="absolute bottom-0 left-0 w-[70%] sm:w-[60%] h-[50%] sm:h-[60%] bg-[#86d6e6] opacity-90 -rotate-[15deg] -translate-x-1/3 translate-y-1/4 rounded-tl-[3rem] sm:rounded-tl-[4rem]" />
+
+          {/* Content */}
+          <div className="relative z-10 w-full max-w-md sm:max-w-lg md:max-w-2xl text-center space-y-10 sm:space-y-12">
+            {/* Logo */}
+            <motion.div
+              initial={{ scale: 0, rotate: -180, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 100, damping: 15 }}
+              className="flex justify-center"
+            >
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#0093af] rounded-3xl flex items-center justify-center shadow-2xl">
+                <span className="text-4xl sm:text-5xl font-black text-white">K</span>
+              </div>
+            </motion.div>
+
+            {/* Heading */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+            >
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-[#0093af] leading-tight">
+                Kivo Smart Wallet
+              </h1>
+            </motion.div>
+
+            {/* Get Started Button */}
+            <motion.button
+              onClick={handleGetStartedClick}
+              onHoverStart={() => setIsHover(true)}
+              onHoverEnd={() => setIsHover(false)}
+              className={`relative mx-auto flex items-center justify-center gap-10 sm:gap-16 md:gap-20 pr-5 rounded-full font-semibold overflow-hidden
+                bg-[#0093af] text-white transition-all group duration-300 shadow-lg 
+                ${isHover ? "scale-105 shadow-2xl" : ""}`}
+            >
+              {/* Sliding overlay */}
+              <motion.div
+                className="absolute top-0 left-0 w-full h-full bg-white/20 rounded-full"
+                initial={{ x: "-100%" }}
+                animate={{ x: isAnimating ? "100%" : "-100%" }}
+                transition={{ type: "tween", duration: 0.6 }}
+              />
+
+              {/* Arrow Icon */}
+              <motion.span
+                className="relative z-10 py-5 px-6 sm:py-6 sm:px-8 flex items-center justify-center group-hover:translate-x-6 duration-300 ease-in-out rounded-full bg-white text-[#0093af]"
+                animate={{ x: isAnimating ? 200 : 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              >
+                <ArrowRight size={22} />
+              </motion.span>
+
+              {/* Text */}
+              <span className="relative z-10 text-lg sm:text-xl font-semibold text-center">
+                Get Started
+              </span>
+            </motion.button>
+          </div>
         </motion.div>
-      </div>
-    </motion.div>
+      )}
+    </AnimatePresence>
   )
 }

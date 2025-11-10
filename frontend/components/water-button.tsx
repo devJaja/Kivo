@@ -49,7 +49,7 @@ export default function WaterButton({
   }
 
   const baseClasses =
-    "relative overflow-hidden font-semibold transition-all duration-300 flex items-center justify-center gap-2 rounded-lg"
+    "relative overflow-hidden font-semibold transition-all duration-300 flex items-center justify-center gap-2 rounded-lg border border-border"
 
   const variantClasses = {
     primary: "bg-primary text-primary-foreground hover:bg-primary/90",
