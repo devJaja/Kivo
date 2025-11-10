@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Mail, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import WaterButton from "@/components/water-button";
 import { useLogin, usePrivy } from "@privy-io/react-auth";
 import { useWalletStore } from "@/store/wallet-store";
@@ -21,8 +21,14 @@ export default function PrivyLogin({
   const { user, ready, authenticated } = usePrivy();
 
   const { login } = useLogin({
-    onComplete: (user, isNewUser, wasAlreadyAuthenticated) => {
-      console.log("Privy login complete", user);
+    onComplete: ({ user, isNewUser, wasAlreadyAuthenticated, loginMethod, loginAccount }) => {
+      console.log("Privy login complete", {
+        user,
+        isNewUser,
+        wasAlreadyAuthenticated,
+        loginMethod,
+        loginAccount,
+      });
       // The useEffect below will handle the redirect
     },
     onError: (error) => {
@@ -39,10 +45,17 @@ export default function PrivyLogin({
         const account: WalletAccount = {
           id: user.id,
           address: embeddedWallet.address,
-          name: user.google?.name || user.twitter?.username || user.email?.address || "User",
+          name:
+            user.google?.name ||
+            user.twitter?.username ||
+            user.email?.address ||
+            "User",
           email: user.google?.email || user.email?.address || "",
-          avatar: user.google?.profilePictureUrl || user.twitter?.profilePictureUrl,
-          firstLoginTime: user.createdAt ? new Date(user.createdAt).getTime() : Date.now(),
+          avatar:
+            user.google?.profilePictureUrl || user.twitter?.profilePictureUrl,
+          firstLoginTime: user.createdAt
+            ? new Date(user.createdAt).getTime()
+            : Date.now(),
         };
         onAuthSuccess(account);
       }
