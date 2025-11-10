@@ -1,34 +1,57 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { ChevronDown } from "lucide-react"
-import { useWallet } from "@/hooks/user-privy-auth"
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown } from "lucide-react";
+import { usePrivy } from "@privy-io/react-auth";
+import { useSwitchChain, useAccount } from "wagmi";
+import { wagmiConfig } from "@/app/providers";
 
 export default function ChainSelector() {
-  const [isOpen, setIsOpen] = useState(false)
-  const { activeChain, switchChain, getAvailableChains, getCurrentChain } = useWallet()
+  const [isOpen, setIsOpen] = useState(false);
+  const { user } = usePrivy();
+  const { chainId, isConnected } = useAccount();
+  const { switchChain } = useSwitchChain();
 
-  const currentChain = getCurrentChain()
-  const chains = getAvailableChains()
+  const currentPrivyWallet = user?.wallet;
+
+  // 👇 Safe detection logic
+  const maybePrivyChainId =
+    (currentPrivyWallet as any)?.chainId
+      ? parseInt((currentPrivyWallet as any).chainId.split(":")[1])
+      : undefined;
+
+  const currentChain = wagmiConfig.chains.find(
+    (c) => c.id === (chainId ?? maybePrivyChainId)
+  );
+
+  const chains = wagmiConfig.chains;
+
+  const handleSwitchChain = (id: number) => {
+    if (isConnected) {
+      switchChain({ chainId: id });
+    } else {
+      console.log("Wallet not connected, cannot switch chain via wagmi");
+    }
+    setIsOpen(false);
+  };
+
 
   return (
-    <div className="relative">
-      {/* Selector Button */}
+      <div className="relative">
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg hover:border-primary/30 transition-colors"
       >
-        <span className="text-xl">{currentChain?.icon}</span>
+        <span className="text-xl">{currentChain?.nativeCurrency.symbol}</span>
         <span className="font-medium text-foreground">{currentChain?.name}</span>
         <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
           <ChevronDown size={16} className="text-muted-foreground" />
         </motion.div>
       </motion.button>
 
-      {/* Dropdown Menu */}
       <AnimatePresence>
         {isOpen && (
           <>
@@ -45,20 +68,17 @@ export default function ChainSelector() {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  onClick={() => {
-                    switchChain(chain.id)
-                    setIsOpen(false)
-                  }}
+                  onClick={() => handleSwitchChain(chain.id)}
                   className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-primary/10 transition-colors text-left ${
-                    activeChain === chain.id ? "bg-primary/5 border-l-2 border-l-primary" : ""
+                    chainId === chain.id ? "bg-primary/5 border-l-2 border-l-primary" : ""
                   }`}
                 >
-                  <span className="text-xl">{chain.icon}</span>
+                  <span className="text-xl">{chain.nativeCurrency.symbol}</span>
                   <div className="flex-1">
                     <p className="font-medium text-foreground">{chain.name}</p>
-                    <p className="text-xs text-muted-foreground">{chain.nativeToken}</p>
+                    <p className="text-xs text-muted-foreground">{chain.nativeCurrency.symbol}</p>
                   </div>
-                  {activeChain === chain.id && (
+                  {chainId === chain.id && (
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
@@ -69,7 +89,6 @@ export default function ChainSelector() {
               ))}
             </motion.div>
 
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -81,5 +100,8 @@ export default function ChainSelector() {
         )}
       </AnimatePresence>
     </div>
-  )
+  
+  );
 }
+
+// export default ChainSelector

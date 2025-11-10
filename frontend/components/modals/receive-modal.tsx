@@ -1,23 +1,41 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { X, Copy, Download } from "lucide-react"
-import Button from "@/components/ui/button"
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { X, Copy, Download } from "lucide-react";
+import Button from "@/components/ui/button";
+import { usePrivy } from "@privy-io/react-auth"; // Import usePrivy
+import { QRCodeCanvas } from "qrcode.react"; // Import QRCode
 
 interface ReceiveModalProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 export default function ReceiveModal({ onClose }: ReceiveModalProps) {
-  const [copied, setCopied] = useState(false)
-  const address = "0x742d35Cc6634C0532925a3b844Bc9e7595f42bE"
+  const [copied, setCopied] = useState(false);
+  const { user } = usePrivy(); // Get user from usePrivy
+  const address = user?.wallet?.address || ""; // Get wallet address
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(address)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    if (address) {
+      navigator.clipboard.writeText(address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleDownloadQrCode = () => {
+    const canvas = document.getElementById("qr-code-canvas") as HTMLCanvasElement;
+    if (canvas) {
+      const pngUrl = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.href = pngUrl;
+      downloadLink.download = `kivo-address-qr-${address.slice(0, 6)}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+  };
 
   return (
     <>
@@ -43,14 +61,23 @@ export default function ReceiveModal({ onClose }: ReceiveModalProps) {
           </div>
 
           <div className="space-y-6">
-            {/* QR Code Placeholder */}
+            {/* QR Code */}
             <div className="flex justify-center">
-              <div className="w-48 h-48 bg-gradient-to-br from-primary/10 to-secondary/20 rounded-lg border-2 border-primary/30 flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-2">QR Code</p>
-                  <p className="text-xs text-muted-foreground">(Placeholder)</p>
+              {address ? (
+                <div className="p-2 bg-white rounded-lg">
+                  <QRCodeCanvas
+                    id="qr-code-canvas"
+                    value={address}
+                    size={192}
+                    level="H"
+                    includeMargin={false}
+                  />
                 </div>
-              </div>
+              ) : (
+                <div className="w-48 h-48 bg-gradient-to-br from-primary/10 to-secondary/20 rounded-lg border-2 border-primary/30 flex items-center justify-center">
+                  <p className="text-sm text-muted-foreground">No Address Found</p>
+                </div>
+              )}
             </div>
 
             {/* Address Display */}
@@ -73,7 +100,11 @@ export default function ReceiveModal({ onClose }: ReceiveModalProps) {
               {copied && <p className="text-xs text-primary mt-2">Address copied!</p>}
             </div>
 
-            <Button className="w-full bg-secondary/30 hover:bg-secondary/40 text-foreground border border-secondary/50 font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2">
+            <Button
+              className="w-full bg-secondary/30 hover:bg-secondary/40 text-foreground border border-secondary/50 font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
+              onClick={handleDownloadQrCode}
+              disabled={!address}
+            >
               <Download size={18} />
               Download QR Code
             </Button>
@@ -81,5 +112,5 @@ export default function ReceiveModal({ onClose }: ReceiveModalProps) {
         </div>
       </motion.div>
     </>
-  )
+  );
 }

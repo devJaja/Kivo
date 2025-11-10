@@ -1,7 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
-import "./globals.css"
+import { Providers } from "@/app/providers";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Kivo - Smart Wallet",
@@ -24,19 +25,21 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-icon.png",
   },
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
       <body className="font-sans antialiased bg-background text-foreground">
-        {children}
-        <Analytics />
+        <Providers>
+          {children}
+          <Analytics />
+        </Providers>
       </body>
     </html>
-  )
+  );
 }
