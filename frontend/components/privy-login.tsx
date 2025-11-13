@@ -35,16 +35,14 @@ export default function PrivyLogin({
 
   useEffect(() => {
     if (ready && authenticated && user) {
-      const embeddedWallet = user.wallets?.find(
-        (w) => w.walletClientType === "privy"
-      );
+      const embeddedWallet = user.wallet;
       if (embeddedWallet) {
         const account: WalletAccount = {
           id: user.id,
           address: embeddedWallet.address,
           name: user.google?.name || user.email?.address || "User",
           email: user.google?.email || user.email?.address || "",
-          avatar: user.google?.profilePictureUrl || undefined,
+          avatar: undefined,
           firstLoginTime: user.createdAt
             ? new Date(user.createdAt).getTime()
             : Date.now(),

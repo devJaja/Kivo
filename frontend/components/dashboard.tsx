@@ -69,7 +69,7 @@ export default function Dashboard() {
 
   const ethBalance = balanceData?.formatted || "0";
   const chainName =
-    wagmiConfig.chains.find((c) => c.id === currentChainId)?.name || "Unknown";
+    wagmiConfig.chains.find((c) => c.id === currentChainId)?.name || "Base Sepolia";
 
   return (
     <motion.div
