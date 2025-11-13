@@ -9,6 +9,7 @@ import TransactionList from "@/components/transaction-list";
 import SendModal from "@/components/modals/send-modal";
 import ReceiveModal from "@/components/modals/receive-modal";
 import SwapModal from "@/components/modals/swap-modal";
+import BridgeModal from "@/components/modals/bridge-modal";
 import ConfirmationModal from "@/components/modals/confirmation-modal";
 import AIAssistant from "@/components/ai-assistant";
 import ChainSelector from "@/components/chain-selector";
@@ -25,7 +26,7 @@ interface ExtendedWallet {
   chainId?: string;
 }
 
-type ModalType = "send" | "receive" | "swap" | null;
+type ModalType = "send" | "receive" | "swap" | "bridge" | null;
 
 export default function Dashboard() {
   const router = useRouter();
@@ -182,6 +183,7 @@ export default function Dashboard() {
               onSend={() => setActiveModal("send")}
               onReceive={() => setActiveModal("receive")}
               onSwap={() => setActiveModal("swap")}
+              onBridge={() => setActiveModal("bridge")}
             />
           </motion.div>
 
@@ -214,6 +216,7 @@ export default function Dashboard() {
         {activeModal === "send" && <SendModal onClose={() => setActiveModal(null)} />}
         {activeModal === "receive" && <ReceiveModal onClose={() => setActiveModal(null)} />}
         {activeModal === "swap" && <SwapModal onClose={() => setActiveModal(null)} />}
+        {activeModal === "bridge" && <BridgeModal onClose={() => setActiveModal(null)} />}
         {showLogoutConfirm && (
           <ConfirmationModal
             title="Confirm Logout"

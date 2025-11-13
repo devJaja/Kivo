@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { motion } from "framer-motion"
-import { Send, ArrowDownLeft, Shuffle } from "lucide-react"
+import { Send, ArrowDownLeft, Shuffle, ArrowRightLeft } from "lucide-react"
 
 interface ActionButtonProps {
   icon: React.ElementType
@@ -57,19 +57,21 @@ interface ActionButtonsProps {
   onSend: () => void
   onReceive: () => void
   onSwap: () => void
+  onBridge: () => void
 }
 
-export default function ActionButtons({ onSend, onReceive, onSwap }: ActionButtonsProps) {
+export default function ActionButtons({ onSend, onReceive, onSwap, onBridge }: ActionButtonsProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, duration: 0.5 }}
-      className="grid grid-cols-3 gap-3"
+      className="grid grid-cols-4 gap-3"
     >
       <ActionButton icon={Send} label="Send" onClick={onSend} />
       <ActionButton icon={ArrowDownLeft} label="Receive" onClick={onReceive} />
       <ActionButton icon={Shuffle} label="Swap" onClick={onSwap} />
+      <ActionButton icon={ArrowRightLeft} label="Bridge" onClick={onBridge} />
     </motion.div>
   )
 }
