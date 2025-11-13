@@ -13,16 +13,8 @@ export default function ChainSelector() {
   const { chainId, isConnected } = useAccount();
   const { switchChain } = useSwitchChain();
 
-  const currentPrivyWallet = user?.wallet;
-
-  // 👇 Safe detection logic
-  const maybePrivyChainId =
-    (currentPrivyWallet as any)?.chainId
-      ? parseInt((currentPrivyWallet as any).chainId.split(":")[1])
-      : undefined;
-
   const currentChain = wagmiConfig.chains.find(
-    (c) => c.id === (chainId ?? maybePrivyChainId)
+    (c) => c.id === chainId
   );
 
   const chains = wagmiConfig.chains;

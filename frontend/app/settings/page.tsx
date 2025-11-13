@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { ArrowLeft, Save, Download } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useWalletStore } from "@/store/wallet-store"
+import { useWalletStore, type WalletSettings } from "@/store/wallet-store"
 import WaterButton from "@/components/water-button"
 
 export default function SettingsPage() {
@@ -14,7 +14,7 @@ export default function SettingsPage() {
   const [localSettings, setLocalSettings] = useState(settings)
   const [hasChanges, setHasChanges] = useState(false)
 
-  const handleSettingChange = (key: keyof typeof settings, value: any) => {
+  const handleSettingChange = (key: keyof typeof settings, value: WalletSettings[typeof key]) => {
     setLocalSettings((prev) => ({ ...prev, [key]: value }))
     setHasChanges(true)
   }
@@ -162,7 +162,7 @@ export default function SettingsPage() {
             <label className="text-sm font-medium text-foreground">Relayer Selection</label>
             <select
               value={localSettings.selectedRelayer}
-              onChange={(e) => handleSettingChange("selectedRelayer", e.target.value as any)}
+              onChange={(e) => handleSettingChange("selectedRelayer", e.target.value)}
               className="w-full px-3 py-2 bg-card text-foreground border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="mock">Mock (Development)</option>

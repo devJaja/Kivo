@@ -353,10 +353,14 @@ export default function EnhancedAIAssistant() {
 
             {/* Tabs */}
             <div className="flex border-b border-gray-200 dark:border-gray-800">
-              {["opportunities", "analysis", "logs"].map((tab) => (
+              {([
+                "opportunities",
+                "analysis",
+                "logs",
+              ] as const).map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab as any)}
+                  onClick={() => setActiveTab(tab)}
                   className={`flex-1 px-4 py-3 text-sm font-medium capitalize transition ${
                     activeTab === tab
                       ? "border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400"

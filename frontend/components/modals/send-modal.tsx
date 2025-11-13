@@ -4,6 +4,8 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
 import Button from "@/components/ui/button"
+import { usePrivy } from "@privy-io/react-auth"
+import { parseEther } from "viem"
 
 interface SendModalProps {
   onClose: () => void
@@ -13,10 +15,23 @@ export default function SendModal({ onClose }: SendModalProps) {
   const [recipient, setRecipient] = useState("")
   const [amount, setAmount] = useState("")
   const [token, setToken] = useState("ETH")
+  const { user, sendTransaction } = usePrivy()
 
-  const handleConfirm = () => {
-    // Handle send logic
-    onClose()
+  const handleConfirm = async () => {
+    if (user && user.wallet && recipient && amount) {
+      try {
+        const tx = await sendTransaction({
+          to: recipient as `0x${string}`,
+          value: parseEther(amount),
+        })
+        console.log("Transaction sent:", tx)
+        onClose()
+      } catch (error) {
+        console.error("Transaction failed:", error)
+      }
+    } else {
+      onClose()
+    }
   }
 
   return (

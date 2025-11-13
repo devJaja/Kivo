@@ -9,7 +9,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     try {
       const item = window.localStorage.getItem(key)
       if (item) {
-        setStoredValue(JSON.parse(item))
+        setTimeout(() => setStoredValue(JSON.parse(item)), 0)
       }
     } catch (error) {
       console.error("[v0] localStorage read error:", error)

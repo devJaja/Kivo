@@ -14,7 +14,7 @@ import AIAssistant from "@/components/ai-assistant";
 import ChainSelector from "@/components/chain-selector";
 import ProfileIcon from "@/components/profile-icon";
 import { usePrivy } from "@privy-io/react-auth";
-import { useBalance } from "wagmi";
+import { useBalance, useAccount } from "wagmi";
 import { useWalletStore } from "@/store/wallet-store";
 import { LogOut } from "lucide-react";
 import { wagmiConfig } from "@/app/providers";
@@ -33,25 +33,55 @@ export default function Dashboard() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const { user, logout } = usePrivy();
-  const wallet = user?.wallet as ExtendedWallet | undefined; // ✅ Safe inline type fix
+  const wallet = user?.wallet as ExtendedWallet | undefined;
   const { account, setAccount, setAuthenticated } = useWalletStore();
+  const { address: wagmiAddress, chainId } = useAccount();
 
-  const chainIdStr = wallet?.chainId;
-  const currentChainId = chainIdStr ? parseInt(chainIdStr.split(":")[1]) : undefined;
-
-  const { data: balanceData } = useBalance({
-    address: wallet?.address as `0x${string}`,
-    chainId: currentChainId,
+  // Get the embedded wallet from Privy
+  const embeddedWallet = user?.wallet;
+  
+  // Use embeddedWallet address or fallback to wagmi address or user wallet
+  const activeAddress = embeddedWallet?.address || wagmiAddress || wallet?.address;
+  
+  // Parse chainId properly - Privy returns chainId as "eip155:84532" format
+    const activeChainId = chainId || 84532; // Default to Base Sepolia
+  const { data: balanceData, isLoading, error, refetch } = useBalance({
+    address: activeAddress as `0x${string}`,
+    chainId: activeChainId,
     query: {
-      enabled: !!wallet?.address && !!chainIdStr,
+      enabled: !!activeAddress,
+      refetchInterval: 10000, // Refetch every 10 seconds
+      staleTime: 5000, // Consider data stale after 5 seconds
     },
   });
 
+  // Debug logs to help troubleshoot
+  useEffect(() => {
+    console.log('🔍 Balance Debug Info:', {
+      activeAddress,
+      activeChainId,
+      embeddedWallet: embeddedWallet?.address,
+      wagmiAddress,
+      chainId,
+      balanceData: balanceData?.formatted,
+      isLoading,
+      error: error?.message,
+    });
+  }, [activeAddress, activeChainId, balanceData, isLoading, error, embeddedWallet, wagmiAddress, chainId]);
+
   useEffect(() => {
     if (balanceData) {
+      console.log('✅ Balance loaded:', balanceData.formatted);
       // Future: Load balances from relayer or backend
     }
   }, [balanceData]);
+
+  // Refetch balance when chain changes
+  useEffect(() => {
+    if (activeAddress && activeChainId) {
+      refetch();
+    }
+  }, [activeChainId, activeAddress, refetch]);
 
   const handleLogout = () => setShowLogoutConfirm(true);
 
@@ -67,9 +97,15 @@ export default function Dashboard() {
 
   const handleProfileClick = () => router.push("/profile");
 
-  const ethBalance = balanceData?.formatted || "0";
+  // Show loading or error states
+  const ethBalance = isLoading 
+    ? "..." 
+    : error 
+    ? "0" 
+    : balanceData?.formatted || "0";
+    
   const chainName =
-    wagmiConfig.chains.find((c) => c.id === currentChainId)?.name || "Base Sepolia";
+    wagmiConfig.chains.find((c) => c.id === activeChainId)?.name || "Base Sepolia";
 
   return (
     <motion.div
@@ -132,7 +168,7 @@ export default function Dashboard() {
             <WalletCard
               balance={ethBalance}
               chain={chainName}
-              address={account?.address || ""}
+              address={account?.address || activeAddress || ""}
             />
           </motion.div>
 

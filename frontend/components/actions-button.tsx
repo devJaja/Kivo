@@ -5,13 +5,13 @@ import type React from "react"
 import { motion } from "framer-motion"
 import { Send, ArrowDownLeft, Shuffle } from "lucide-react"
 
-interface ActionButtonsProps {
-  onSend: () => void
-  onReceive: () => void
-  onSwap: () => void
+interface ActionButtonProps {
+  icon: React.ElementType
+  label: string
+  onClick: () => void
 }
 
-export default function ActionButtons({ onSend, onReceive, onSwap }: ActionButtonsProps) {
+const ActionButton = ({ icon: Icon, label, onClick }: ActionButtonProps) => {
   const createRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
     const button = e.currentTarget
     const rect = button.getBoundingClientRect()
@@ -35,20 +35,12 @@ export default function ActionButtons({ onSend, onReceive, onSwap }: ActionButto
     setTimeout(() => ripple.remove(), 600)
   }
 
-  const ActionButton = ({
-    icon: Icon,
-    label,
-    onClick,
-  }: {
-    icon: any
-    label: string
-    onClick: () => void
-  }) => (
+  return (
     <motion.button
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={(e) => {
-        createRipple(e as any)
+        createRipple(e)
         onClick()
       }}
       className="flex-1 flex flex-col items-center gap-2 py-4 px-3 rounded-xl bg-card border border-border hover:border-primary/30 hover:bg-secondary/10 transition-all duration-300 group"
@@ -59,7 +51,15 @@ export default function ActionButtons({ onSend, onReceive, onSwap }: ActionButto
       <span className="text-xs font-semibold text-foreground">{label}</span>
     </motion.button>
   )
+}
 
+interface ActionButtonsProps {
+  onSend: () => void
+  onReceive: () => void
+  onSwap: () => void
+}
+
+export default function ActionButtons({ onSend, onReceive, onSwap }: ActionButtonsProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

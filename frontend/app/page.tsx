@@ -32,13 +32,13 @@ export default function Home() {
           };
           setAccount(account);
           setAuthenticated(true);
-          setAppState("dashboard");
+          setTimeout(() => setAppState("dashboard"), 0);
         } else {
           // User is authenticated but no embedded wallet found, maybe show a message or redirect to wallet creation
-          setAppState("signup");
+          setTimeout(() => setAppState("signup"), 0);
         }
       } else {
-        setAppState("welcome");
+        setTimeout(() => setAppState("welcome"), 0);
       }
     }
   }, [ready, authenticated, user, setAccount, setAuthenticated]);
