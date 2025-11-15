@@ -61,7 +61,7 @@ export default function HeroWelcome({ onGetStarted }: HeroWelcomeProps) {
               <img 
                 src="/kivo-logo.png" 
                 alt="Kivo Logo" 
-                className="w-25 h-25 sm:w-24 sm:h-24 object-contain drop-shadow-2xl"
+                className="w-28 h-28 sm:w-24 sm:h-24 object-contain drop-shadow-2xl"
               />
             </motion.div>
 
