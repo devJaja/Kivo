@@ -58,9 +58,11 @@ export default function HeroWelcome({ onGetStarted }: HeroWelcomeProps) {
               transition={{ type: "spring", stiffness: 100, damping: 15 }}
               className="flex justify-center"
             >
-              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#0093af] rounded-3xl flex items-center justify-center shadow-2xl">
-                <span className="text-4xl sm:text-5xl font-black text-white">K</span>
-              </div>
+              <img 
+                src="/kivo-logo.png" 
+                alt="Kivo Logo" 
+                className="w-25 h-25 sm:w-24 sm:h-24 object-contain drop-shadow-2xl"
+              />
             </motion.div>
 
             {/* Heading */}

@@ -1,11 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
 import Button from "@/components/ui/button"
 import { usePrivy } from "@privy-io/react-auth"
-import { parseEther } from "viem"
+import { parseEther, parseUnits, encodeFunctionData, formatEther } from "viem"
+import { useWalletStore } from "@/store/wallet-store"
+import { usePublicClient, useWalletClient, useWriteContract, useWaitForTransactionReceipt, useEstimateGas } from "wagmi"
+import { RealTimePriceOracle } from "@/lib/priceOracle"
+import { erc20Abi } from "viem" // Standard ERC-20 ABI
 
 interface SendModalProps {
   onClose: () => void
@@ -15,22 +19,132 @@ export default function SendModal({ onClose }: SendModalProps) {
   const [recipient, setRecipient] = useState("")
   const [amount, setAmount] = useState("")
   const [token, setToken] = useState("ETH")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { user, sendTransaction } = usePrivy()
+  const { balances, activeChain } = useWalletStore()
+  const priceOracle = new RealTimePriceOracle()
+
+  const { data: walletClient } = useWalletClient()
+  const publicClient = usePublicClient()
+  const { writeContractAsync } = useWriteContract()
+  const [currentTxHash, setCurrentTxHash] = useState<`0x${string}` | undefined>(undefined)
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed, isError: isTxError } = useWaitForTransactionReceipt({
+    hash: currentTxHash,
+  })
+
+  // Get active chain ID from wallet store
+  const activeChainId = parseInt(activeChain, 10)
+
+  // Prepare gas estimation config
+  const tokenAddress = token !== "ETH" ? priceOracle.getTokenAddress(activeChainId.toString(), token) : undefined
+  const decimals = 6 // Assuming 6 for USDC/USDT, fetch dynamically in a real app
+  const amountWei = amount && token !== "ETH" ? parseUnits(amount, decimals) : undefined
+
+  const gasEstimateConfig =
+    token === "ETH"
+      ? {
+          to: recipient as `0x${string}`,
+          value: amount ? parseEther(amount) : undefined,
+        }
+      : {
+          to: tokenAddress as `0x${string}`,
+          data:
+            tokenAddress && amountWei && recipient
+              ? encodeFunctionData({
+                  abi: erc20Abi,
+                  functionName: "transfer",
+                  args: [recipient as `0x${string}`, amountWei],
+                })
+              : undefined,
+        }
+
+  const { data: gasEstimate, isLoading: isGasLoading, error: gasError } = useEstimateGas({
+    ...gasEstimateConfig,
+    query: {
+      enabled: !!recipient && !!amount && !isNaN(Number(amount)) && Number(amount) > 0 && !!gasEstimateConfig.to,
+    },
+  })
+
+  useEffect(() => {
+    if (isConfirmed) {
+      console.log("Transaction confirmed!")
+      onClose()
+    }
+    if (isTxError) {
+      setError("Transaction failed to confirm on chain.")
+      console.error("Transaction failed to confirm.")
+    }
+  }, [isConfirmed, isTxError, onClose])
 
   const handleConfirm = async () => {
-    if (user && user.wallet && recipient && amount) {
-      try {
+    setError(null)
+    if (!recipient) {
+      setError("Recipient address cannot be empty.")
+      return
+    }
+    if (Number(amount) <= 0) {
+      setError("Amount must be greater than zero.")
+      return
+    }
+    if (!user || !user.wallet) {
+      setError("Wallet not connected.")
+      return
+    }
+
+    if (token === "ETH") {
+      const chainBalances = balances[activeChain]
+      const ethBalance = chainBalances ? parseFloat(chainBalances["ETH"]) : 0
+
+      if (parseFloat(amount) > ethBalance) {
+        setError("Insufficient ETH balance.")
+        setIsLoading(false) // Ensure loading is false if balance is insufficient
+        return
+      }
+    }
+
+    setIsLoading(true)
+    try {
+      let txHash: `0x${string}` | undefined
+
+      if (token === "ETH") {
         const tx = await sendTransaction({
           to: recipient as `0x${string}`,
           value: parseEther(amount),
         })
-        console.log("Transaction sent:", tx)
-        onClose()
-      } catch (error) {
-        console.error("Transaction failed:", error)
+        txHash = tx.hash
+        setCurrentTxHash(txHash) // Set the transaction hash to monitor
+      } else {
+        // ERC-20 Token Transfer (USDC, USDT)
+        const tokenAddress = priceOracle.getTokenAddress(activeChainId.toString(), token)
+        if (!tokenAddress) {
+          throw new Error(`Token address not found for ${token} on chain ${activeChainId}`)
+        }
+
+        // For now, hardcode decimals for USDC/USDT. In a real app, fetch this from the contract.
+        const decimals = 6 // USDC and USDT typically have 6 decimals
+
+        const amountWei = parseUnits(amount, decimals)
+
+        const hash = await writeContractAsync({
+          address: tokenAddress as `0x${string}`,
+          abi: erc20Abi,
+          functionName: "transfer",
+          args: [recipient as `0x${string}`, amountWei],
+        })
+        txHash = hash
+        setCurrentTxHash(txHash) // Set the transaction hash to monitor
       }
-    } else {
-      onClose()
+
+      if (txHash) {
+        console.log("Transaction sent, hash:", txHash)
+        // The modal will close once the transaction is confirmed or errors out via the useEffect below
+      }
+    } catch (err: any) {
+      console.error("Transaction failed:", err)
+      setError(err.message || "Transaction failed. Please try again.")
+      setIsLoading(false) // Stop loading on immediate error
     }
   }
 
@@ -91,21 +205,37 @@ export default function SendModal({ onClose }: SendModalProps) {
                   placeholder="0.00"
                   className="w-full px-4 py-3 rounded-lg bg-background border border-border focus:border-primary outline-none transition-colors"
                 />
+                <p className="text-xs text-muted-foreground mt-1 text-right">
+                  Your balance: {balances[activeChain]?.[token] || "0"} {token}
+                </p>
               </div>
             </div>
 
             <div className="bg-secondary/20 rounded-lg p-4 border border-secondary/30">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Gas Fees</span>
-                <span className="text-sm font-semibold text-foreground">Sponsored by Kivo</span>
+                {isGasLoading ? (
+                  <span className="text-sm font-semibold text-foreground">Estimating...</span>
+                ) : gasError ? (
+                  <span className="text-sm text-red-500">Error estimating gas</span>
+                ) : gasEstimate ? (
+                  <span className="text-sm font-semibold text-foreground">
+                    ~{formatEther(gasEstimate)} ETH
+                  </span>
+                ) : (
+                  <span className="text-sm font-semibold text-foreground">Sponsored by Kivo</span>
+                )}
               </div>
             </div>
+
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
             <Button
               onClick={handleConfirm}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 rounded-lg transition-all"
+              disabled={isLoading || isConfirming}
             >
-              Confirm Send
+              {isLoading ? "Sending..." : isConfirming ? "Confirming..." : "Confirm Send"}
             </Button>
           </div>
         </div>

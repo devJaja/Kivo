@@ -62,6 +62,7 @@ interface WalletStore {
   transactions: Transaction[]
   addTransaction: (tx: Transaction) => void
   updateTransaction: (id: string, updates: Partial<Transaction>) => void
+  setTransactions: (transactions: Transaction[]) => void
 
   // Settings
   settings: WalletSettings
@@ -104,6 +105,7 @@ export const useWalletStore = create<WalletStore>()(
         set((state) => ({
           transactions: state.transactions.map((tx) => (tx.id === id ? { ...tx, ...updates } : tx)),
         })),
+      setTransactions: (transactions) => set({ transactions }),
       updateSettings: (updates) =>
         set((state) => ({
           settings: {

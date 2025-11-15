@@ -11,14 +11,16 @@ import ReceiveModal from "@/components/modals/receive-modal";
 import SwapModal from "@/components/modals/swap-modal";
 import BridgeModal from "@/components/modals/bridge-modal";
 import ConfirmationModal from "@/components/modals/confirmation-modal";
-import AIAssistant from "@/components/ai-assistant";
+import EnhancedAIAssistant from "@/components/ai-assistant";
 import ChainSelector from "@/components/chain-selector";
 import ProfileIcon from "@/components/profile-icon";
-import { usePrivy } from "@privy-io/react-auth";
-import { useBalance, useAccount } from "wagmi";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useBalance } from "wagmi";
 import { useWalletStore } from "@/store/wallet-store";
+import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { LogOut } from "lucide-react";
 import { wagmiConfig } from "@/app/providers";
+import { useAccount } from "wagmi";
 
 // 👇 Inline wallet interface to avoid types/privy.d.ts
 interface ExtendedWallet {
@@ -34,18 +36,26 @@ export default function Dashboard() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const { user, logout } = usePrivy();
-  const wallet = user?.wallet as ExtendedWallet | undefined;
-  const { account, setAccount, setAuthenticated } = useWalletStore();
-  const { address: wagmiAddress, chainId } = useAccount();
+  const { wallets } = useWallets();
+  const { account, setAccount, setAuthenticated, setBalances } = useWalletStore();
+  
+  console.log('Debug: Privy User =', user);
+  console.log('Debug: Privy Wallets =', wallets);
+  console.log('Debug: Wallet Store Account =', account);
 
-  // Get the embedded wallet from Privy
-  const embeddedWallet = user?.wallet;
+  // Find the active wallet that matches the address stored in useWalletStore
+  const activeWallet = wallets.find(
+    (wallet) => wallet.address.toLowerCase() === account?.address?.toLowerCase()
+  );
+  const activeAddress = activeWallet?.address;
+  useTransactionHistory(activeAddress);
+
+  console.log('Debug: Final activeAddress for useBalance =', activeAddress);
+
+  const activeChainId = activeWallet?.chainId ? parseInt(activeWallet.chainId.split(':')[1], 10) : 84532;
   
-  // Use embeddedWallet address or fallback to wagmi address or user wallet
-  const activeAddress = embeddedWallet?.address || wagmiAddress || wallet?.address;
-  
-  // Parse chainId properly - Privy returns chainId as "eip155:84532" format
-    const activeChainId = chainId || 84532; // Default to Base Sepolia
+  console.log('Debug: activeAddress =', activeAddress, 'activeChainId =', activeChainId);
+
   const { data: balanceData, isLoading, error, refetch } = useBalance({
     address: activeAddress as `0x${string}`,
     chainId: activeChainId,
@@ -61,21 +71,26 @@ export default function Dashboard() {
     console.log('🔍 Balance Debug Info:', {
       activeAddress,
       activeChainId,
-      embeddedWallet: embeddedWallet?.address,
-      wagmiAddress,
-      chainId,
       balanceData: balanceData?.formatted,
       isLoading,
       error: error?.message,
     });
-  }, [activeAddress, activeChainId, balanceData, isLoading, error, embeddedWallet, wagmiAddress, chainId]);
+    if (error) {
+      console.error('🚨 Balance Fetch Error:', error);
+    }
+  }, [activeAddress, activeChainId, balanceData, isLoading, error]);
 
   useEffect(() => {
     if (balanceData) {
       console.log('✅ Balance loaded:', balanceData.formatted);
+      setBalances(activeChainId.toString(), { ETH: balanceData.formatted });
+      // To log the updated balances, we need to access it from the store directly
+      // as setBalances is async and the 'balances' variable in this scope might not be updated yet.
+      const currentBalances = useWalletStore.getState().balances;
+      console.log('Debug: Balances after setBalances =', currentBalances);
       // Future: Load balances from relayer or backend
     }
-  }, [balanceData]);
+  }, [balanceData, activeChainId, setBalances]);
 
   // Refetch balance when chain changes
   useEffect(() => {
@@ -104,6 +119,8 @@ export default function Dashboard() {
     : error 
     ? "0" 
     : balanceData?.formatted || "0";
+  
+  console.log('Debug: ethBalance passed to WalletCard =', ethBalance);
     
   const chainName =
     wagmiConfig.chains.find((c) => c.id === activeChainId)?.name || "Base Sepolia";
@@ -230,7 +247,7 @@ export default function Dashboard() {
       </AnimatePresence>
 
       {/* AI Assistant */}
-      <AIAssistant />
+      <EnhancedAIAssistant />
     </motion.div>
   );
 }

@@ -35,7 +35,16 @@ export class RealTimePriceOracle {
       DAI: '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb',
       WETH: '0x4200000000000000000000000000000000000006',
     },
-  };
+    '84532': { // Base Sepolia - PLACEHOLDER ADDRESSES, UPDATE WITH ACTUAL TESTNET TOKENS
+      USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Using Base Mainnet USDC as placeholder
+      USDT: '0x0000000000000000000000000000000000000000', // Placeholder
+      WETH: '0x4200000000000000000000000000000000000006', // Placeholder
+    },
+  }
+
+  public getTokenAddress(chainId: string, tokenSymbol: string): string | undefined {
+    return this.TOKEN_ADDRESSES[chainId]?.[tokenSymbol];
+  }
 
   async getRealTimePrice(chainId: string, tokenSymbol: string): Promise<number> {
     try {
@@ -99,6 +108,7 @@ export class RealTimePriceOracle {
       '10': 'optimism',
       '137': 'polygon',
       '8453': 'base',
+      '84532': 'baseSepolia', // Added Base Sepolia
     };
     return chainNames[chainId] || 'ethereum';
   }
