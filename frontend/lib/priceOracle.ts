@@ -36,19 +36,28 @@ export class RealTimePriceOracle {
       WETH: '0x4200000000000000000000000000000000000006',
     },
     '84532': { // Base Sepolia - PLACEHOLDER ADDRESSES, UPDATE WITH ACTUAL TESTNET TOKENS
-      USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Using Base Mainnet USDC as placeholder
+      USDC: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // Using Base Mainnet USDC as placeholder
       USDT: '0x0000000000000000000000000000000000000000', // Placeholder
       WETH: '0x4200000000000000000000000000000000000006', // Placeholder
     },
   }
 
-  public getTokenAddress(chainId: string, tokenSymbol: string): string | undefined {
-    return this.TOKEN_ADDRESSES[chainId]?.[tokenSymbol];
+  public getTokenAddress(chainId: string, tokenSymbol: string): string | undefined;
+  public getTokenAddress(chainId: string): Record<string, string> | undefined;
+  public getTokenAddress(chainId: string, tokenSymbol?: string): string | Record<string, string> | undefined {
+    if (tokenSymbol) {
+      return this.TOKEN_ADDRESSES[chainId]?.[tokenSymbol];
+    }
+    return this.TOKEN_ADDRESSES[chainId];
+  }
+
+  public getSupportedTokens(chainId: string): string[] {
+    return Object.keys(this.TOKEN_ADDRESSES[chainId] || {});
   }
 
   async getRealTimePrice(chainId: string, tokenSymbol: string): Promise<number> {
     try {
-      const tokenAddress = this.TOKEN_ADDRESSES[chainId]?.[tokenSymbol];
+      const tokenAddress = this.getTokenAddress(chainId, tokenSymbol);
       if (!tokenAddress) {
         throw new Error(`Token ${tokenSymbol} not found on chain ${chainId}`);
       }

@@ -21,11 +21,11 @@ export interface AgentSuggestion {
   fromPrice: number;
   toPrice: number;
   bridgeFee: string;
-  gasEstimate: string; // This will be a mock value
+  gasEstimate: string; 
   netProfit: string;
   riskLevel: "low" | "medium" | "high";
-  priceImpact: number; // This will be a mock value
-  liquidityDepth: string; // This will be a mock value
+  priceImpact: number; 
+  liquidityDepth: string; 
   timestamp: number;
 }
 

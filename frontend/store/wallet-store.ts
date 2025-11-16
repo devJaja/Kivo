@@ -57,6 +57,8 @@ interface WalletStore {
   // Balances (mocked per chain)
   balances: Record<string, Record<string, string>> // chainId => { tokenSymbol => amount }
   setBalances: (chainId: string, balances: Record<string, string>) => void
+  balancesLoading: boolean
+  setBalancesLoading: (loading: boolean) => void
 
   // Transactions
   transactions: Transaction[]
@@ -74,8 +76,9 @@ export const useWalletStore = create<WalletStore>()(
     (set) => ({
       account: null,
       isAuthenticated: false,
-      activeChain: "base",
+      activeChain: "84532", // Default to Base Sepolia
       balances: {},
+      balancesLoading: false,
       transactions: [],
       settings: {
         displayName: "",
@@ -97,6 +100,7 @@ export const useWalletStore = create<WalletStore>()(
             [chainId]: balances,
           },
         })),
+      setBalancesLoading: (loading) => set({ balancesLoading: loading }),
       addTransaction: (tx) =>
         set((state) => ({
           transactions: [tx, ...state.transactions],

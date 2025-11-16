@@ -93,15 +93,13 @@ export default function SendModal({ onClose }: SendModalProps) {
       return
     }
 
-    if (token === "ETH") {
-      const chainBalances = balances[activeChain]
-      const ethBalance = chainBalances ? parseFloat(chainBalances["ETH"]) : 0
+    const chainBalances = balances[activeChain]
+    const tokenBalance = chainBalances ? parseFloat(chainBalances[token]) : 0
 
-      if (parseFloat(amount) > ethBalance) {
-        setError("Insufficient ETH balance.")
-        setIsLoading(false) // Ensure loading is false if balance is insufficient
-        return
-      }
+    if (parseFloat(amount) > tokenBalance) {
+      setError(`Insufficient ${token} balance.`)
+      setIsLoading(false)
+      return
     }
 
     setIsLoading(true)

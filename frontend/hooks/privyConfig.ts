@@ -1,6 +1,6 @@
 // src/privyConfig.ts
 import type { PrivyClientConfig } from '@privy-io/react-auth'
-import { mainnet, sepolia } from 'viem/chains'
+import { baseSepolia } from 'viem/chains'
 
 export const privyConfig: PrivyClientConfig = {
   appearance: {
@@ -12,5 +12,5 @@ export const privyConfig: PrivyClientConfig = {
       createOnLogin: 'users-without-wallets',
     },
   },
-  supportedChains: [mainnet, sepolia],
+  supportedChains: [baseSepolia],
 }

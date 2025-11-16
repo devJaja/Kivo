@@ -18,9 +18,9 @@ export const wagmiConfig = createConfig({
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <PrivyProvider
-      appId="cmhs9ib3q00alk00csmy7abpb"
+      appId="cmi1gad3o0063l20cn83fgc85"
       config={{
-        loginMethods: ["email", "google", "twitter"],
+        loginMethods: ["email", "google", "farcaster"],
         embeddedWallets: {
           ethereum: {
             createOnLogin: "users-without-wallets",

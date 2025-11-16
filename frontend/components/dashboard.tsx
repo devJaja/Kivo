@@ -20,6 +20,8 @@ import { useWalletStore } from "@/store/wallet-store";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { LogOut } from "lucide-react";
 import { wagmiConfig } from "@/app/providers";
+import { RealTimePriceOracle } from "@/lib/priceOracle";
+import { getBalance } from "@wagmi/core";
 import { useAccount } from "wagmi";
 
 // 👇 Inline wallet interface to avoid types/privy.d.ts
@@ -34,11 +36,18 @@ export default function Dashboard() {
   const router = useRouter();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { user, logout } = usePrivy();
   const { wallets } = useWallets();
-  const { account, setAccount, setAuthenticated, setBalances } = useWalletStore();
+  const { account, setAccount, setAuthenticated, setBalances, setBalancesLoading, setActiveChain } = useWalletStore();
   
+  useEffect(() => {
+    if (account) {
+      setIsLoading(false);
+    }
+  }, [account]);
+
   console.log('Debug: Privy User =', user);
   console.log('Debug: Privy Wallets =', wallets);
   console.log('Debug: Wallet Store Account =', account);
@@ -56,48 +65,95 @@ export default function Dashboard() {
   
   console.log('Debug: activeAddress =', activeAddress, 'activeChainId =', activeChainId);
 
-  const { data: balanceData, isLoading, error, refetch } = useBalance({
+  useEffect(() => {
+    if (activeChainId) {
+      setActiveChain(activeChainId.toString());
+    }
+  }, [activeChainId, setActiveChain]);
+
+  const { data: nativeBalanceData, isLoading: nativeLoading, error: nativeError, refetch: refetchNative } = useBalance({
     address: activeAddress as `0x${string}`,
     chainId: activeChainId,
     query: {
       enabled: !!activeAddress,
-      refetchInterval: 10000, // Refetch every 10 seconds
-      staleTime: 5000, // Consider data stale after 5 seconds
+      refetchInterval: 10000,
+      staleTime: 5000,
     },
   });
+
+  // Fetch balances for all tokens
+  useEffect(() => {
+    if (activeAddress && activeChainId) {
+      const oracle = new RealTimePriceOracle();
+      const chainTokens = oracle.getSupportedTokens(activeChainId.toString());
+      
+      const fetchBalances = async () => {
+        setBalancesLoading(true);
+        const newBalances: Record<string, string> = {};
+
+        // Fetch native balance
+        if (nativeBalanceData) {
+          newBalances['ETH'] = nativeBalanceData.formatted;
+        }
+
+        // Fetch ERC20 balances
+        if (chainTokens) {
+          for (const token of chainTokens) {
+            try {
+              const tokenAddress = oracle.getTokenAddress(activeChainId.toString(), token) as `0x${string}`;
+              if (tokenAddress && tokenAddress !== '0x0000000000000000000000000000000000000000') {
+                const tokenBalanceData = await getBalance(wagmiConfig, {
+                  address: activeAddress as `0x${string}`,
+                  token: tokenAddress,
+                  chainId: activeChainId as any,
+                });
+                if (tokenBalanceData) {
+                  newBalances[token] = tokenBalanceData.formatted;
+                }
+              }
+            } catch (e) {
+              console.error(`Error fetching balance for ${token}:`, e);
+            }
+          }
+        }
+        
+        console.log('Debug: All balances fetched =', newBalances);
+        setBalances(activeChainId.toString(), newBalances);
+        setBalancesLoading(false);
+      };
+
+      fetchBalances();
+    }
+  }, [activeAddress, activeChainId, nativeBalanceData, setBalances, setBalancesLoading]);
+
 
   // Debug logs to help troubleshoot
   useEffect(() => {
     console.log('🔍 Balance Debug Info:', {
       activeAddress,
       activeChainId,
-      balanceData: balanceData?.formatted,
-      isLoading,
-      error: error?.message,
+      balanceData: nativeBalanceData?.formatted,
+      isLoading: nativeLoading,
+      error: nativeError?.message,
     });
-    if (error) {
-      console.error('🚨 Balance Fetch Error:', error);
+    if (nativeError) {
+      console.error('🚨 Balance Fetch Error:', nativeError);
     }
-  }, [activeAddress, activeChainId, balanceData, isLoading, error]);
+  }, [activeAddress, activeChainId, nativeBalanceData, nativeLoading, nativeError]);
 
   useEffect(() => {
-    if (balanceData) {
-      console.log('✅ Balance loaded:', balanceData.formatted);
-      setBalances(activeChainId.toString(), { ETH: balanceData.formatted });
-      // To log the updated balances, we need to access it from the store directly
-      // as setBalances is async and the 'balances' variable in this scope might not be updated yet.
-      const currentBalances = useWalletStore.getState().balances;
-      console.log('Debug: Balances after setBalances =', currentBalances);
-      // Future: Load balances from relayer or backend
+    if (nativeBalanceData) {
+      console.log('✅ ETH Balance loaded:', nativeBalanceData.formatted);
+      // The main useEffect now handles setting balances
     }
-  }, [balanceData, activeChainId, setBalances]);
+  }, [nativeBalanceData]);
 
   // Refetch balance when chain changes
   useEffect(() => {
     if (activeAddress && activeChainId) {
-      refetch();
+      refetchNative();
     }
-  }, [activeChainId, activeAddress, refetch]);
+  }, [activeChainId, activeAddress, refetchNative]);
 
   const handleLogout = () => setShowLogoutConfirm(true);
 
@@ -114,16 +170,24 @@ export default function Dashboard() {
   const handleProfileClick = () => router.push("/profile");
 
   // Show loading or error states
-  const ethBalance = isLoading 
+  const ethBalance = nativeLoading 
     ? "..." 
-    : error 
+    : nativeError 
     ? "0" 
-    : balanceData?.formatted || "0";
+    : nativeBalanceData?.formatted || "0";
   
   console.log('Debug: ethBalance passed to WalletCard =', ethBalance);
     
   const chainName =
     wagmiConfig.chains.find((c) => c.id === activeChainId)?.name || "Base Sepolia";
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-screen bg-background flex items-center justify-center">
+        <p className="text-lg text-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -146,10 +210,10 @@ export default function Dashboard() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleProfileClick}
+              onClick={handleLogout}
               className="p-2 hover:bg-muted rounded-lg transition-colors"
             >
-              ⚙️
+              <LogOut size={20} />
             </motion.button>
             <ProfileIcon onLogout={handleLogout} />
           </div>
