@@ -8,7 +8,7 @@ const API_KEY = process.env.NEXT_PUBLIC_BASESCAN_API_KEY;
 const API_URL = 'https://api-sepolia.basescan.org/api';
 
 export const useTransactionHistory = (address: string | undefined) => {
-  const { setTransactions, transactions } = useWalletStore();
+  const { setTransactions, transactions, transactionRefresher } = useWalletStore();
 
   useEffect(() => {
     if (!address) return;
@@ -36,7 +36,7 @@ export const useTransactionHistory = (address: string | undefined) => {
             type: tx.from.toLowerCase() === address.toLowerCase() ? 'send' : 'receive',
             status: tx.txreceipt_status === '1' ? 'success' : 'failed',
             timestamp: parseInt(tx.timeStamp) * 1000,
-            gasSponsored: false,
+            gasSponsored: false, // This would need more logic
             chainId: '84532', // Base Sepolia
           }));
           setTransactions(formattedTransactions);
@@ -49,7 +49,7 @@ export const useTransactionHistory = (address: string | undefined) => {
     };
 
     fetchTransactions();
-  }, [address, setTransactions]);
+  }, [address, setTransactions, transactionRefresher]);
 
   return { transactions };
 };
