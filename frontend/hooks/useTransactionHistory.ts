@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect } from 'react';
 import { useWalletStore } from '@/store/wallet-store';
 import { useAccount } from 'wagmi';
@@ -34,7 +36,7 @@ export const useTransactionHistory = (address: string | undefined) => {
             type: tx.from.toLowerCase() === address.toLowerCase() ? 'send' : 'receive',
             status: tx.txreceipt_status === '1' ? 'success' : 'failed',
             timestamp: parseInt(tx.timeStamp) * 1000,
-            gasSponsored: false, // This would need more logic
+            gasSponsored: false,
             chainId: '84532', // Base Sepolia
           }));
           setTransactions(formattedTransactions);

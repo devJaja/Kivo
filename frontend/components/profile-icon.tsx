@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { LogOut, Copy, Check } from "lucide-react"
 import { useWalletStore } from "@/store/wallet-store"
+import { useTransactionHistory } from "@/hooks/useTransactionHistory"
 
 interface ProfileIconProps {
   onLogout?: () => void
@@ -12,7 +13,10 @@ interface ProfileIconProps {
 export default function ProfileIcon({ onLogout }: ProfileIconProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
-  const { account } = useWalletStore()
+  const { account, transactions } = useWalletStore()
+
+  // Fetch transaction history
+  useTransactionHistory(account?.address)
 
   if (!account) return null
 
@@ -25,6 +29,11 @@ export default function ProfileIcon({ onLogout }: ProfileIconProps) {
   }
 
   const shortAddress = account.address?.slice(0, 6) + "..." + account.address?.slice(-4)
+
+  // Calculate transaction stats
+  const totalTxs = transactions.length
+  const receivedTxs = transactions.filter((tx) => tx.type === "receive").length
+  const sentTxs = transactions.filter((tx) => tx.type === "send").length
 
   return (
     <div className="relative">
@@ -100,15 +109,15 @@ export default function ProfileIcon({ onLogout }: ProfileIconProps) {
               {/* Stats */}
               <div className="grid grid-cols-3 gap-2 pt-2">
                 <div className="text-center">
-                  <p className="text-lg font-bold text-primary">23</p>
+                  <p className="text-lg font-bold text-primary">{totalTxs}</p>
                   <p className="text-xs text-muted-foreground">Total Txs</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-primary">15</p>
+                  <p className="text-lg font-bold text-primary">{receivedTxs}</p>
                   <p className="text-xs text-muted-foreground">Received</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-primary">8</p>
+                  <p className="text-lg font-bold text-primary">{sentTxs}</p>
                   <p className="text-xs text-muted-foreground">Sent</p>
                 </div>
               </div>

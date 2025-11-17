@@ -6,12 +6,15 @@ import { ArrowLeft, Edit2, Save, Mail, Wallet, Calendar } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useWalletStore } from "@/store/wallet-store"
 import WaterButton from "@/components/water-button"
+import { useTransactionHistory } from "@/hooks/useTransactionHistory"
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { account, updateSettings, settings } = useWalletStore()
+  const { account, updateSettings, settings, transactions } = useWalletStore()
   const [isEditing, setIsEditing] = useState(false)
   const [displayName, setDisplayName] = useState(account?.name || "")
+  // Fetch transaction history
+  useTransactionHistory(account?.address)
 
   if (!account) {
     return null
@@ -29,6 +32,11 @@ export default function ProfilePage() {
   })
 
   const shortAddress = account.address?.slice(0, 10) + "..." + account.address?.slice(-8)
+
+  // Calculate transaction stats
+  const totalTxs = transactions.length
+  const receivedTxs = transactions.filter((tx) => tx.type === "receive").length
+  const sentTxs = transactions.filter((tx) => tx.type === "send").length
 
   return (
     <motion.div
@@ -167,15 +175,15 @@ export default function ProfilePage() {
           className="grid grid-cols-3 gap-3 pt-4"
         >
           <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg text-center space-y-1">
-            <p className="text-2xl font-bold text-primary">23</p>
+            <p className="text-2xl font-bold text-primary">{totalTxs}</p>
             <p className="text-xs text-muted-foreground">Total Txs</p>
           </div>
           <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg text-center space-y-1">
-            <p className="text-2xl font-bold text-primary">15</p>
+            <p className="text-2xl font-bold text-primary">{receivedTxs}</p>
             <p className="text-xs text-muted-foreground">Received</p>
           </div>
           <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg text-center space-y-1">
-            <p className="text-2xl font-bold text-primary">8</p>
+            <p className="text-2xl font-bold text-primary">{sentTxs}</p>
             <p className="text-xs text-muted-foreground">Sent</p>
           </div>
         </motion.div>
