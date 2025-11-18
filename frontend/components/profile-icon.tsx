@@ -4,7 +4,6 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { LogOut, Copy, Check } from "lucide-react"
 import { useWalletStore } from "@/store/wallet-store"
-import { useTransactionHistory } from "@/hooks/useTransactionHistory"
 
 interface ProfileIconProps {
   onLogout?: () => void
@@ -14,9 +13,6 @@ export default function ProfileIcon({ onLogout }: ProfileIconProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const { account, transactions } = useWalletStore()
-
-  // Fetch transaction history
-  useTransactionHistory(account?.address)
 
   if (!account) return null
 

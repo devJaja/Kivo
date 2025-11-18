@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSwitchChain, useAccount } from "wagmi";
-import { wagmiConfig } from "@/app/providers";
+import { wagmiConfig } from "@/hooks/wagmiConfig";
 
 export default function ChainSelector() {
   const [isOpen, setIsOpen] = useState(false);

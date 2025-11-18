@@ -22,7 +22,7 @@ export default function SendModal({ onClose }: SendModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { user, sendTransaction } = usePrivy()
-  const { balances, activeChain, triggerTransactionRefresh } = useWalletStore()
+  const { balances, activeChain } = useWalletStore()
   const priceOracle = new RealTimePriceOracle()
 
   const { data: walletClient } = useWalletClient()
@@ -70,14 +70,13 @@ export default function SendModal({ onClose }: SendModalProps) {
   useEffect(() => {
     if (isConfirmed) {
       console.log("Transaction confirmed!")
-      triggerTransactionRefresh() // Refresh transactions
       onClose()
     }
     if (isTxError) {
       setError("Transaction failed to confirm on chain.")
       console.error("Transaction failed to confirm.")
     }
-  }, [isConfirmed, isTxError, onClose, triggerTransactionRefresh])
+  }, [isConfirmed, isTxError, onClose])
 
   const handleConfirm = async () => {
     setError(null)

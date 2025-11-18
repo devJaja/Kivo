@@ -6,15 +6,15 @@ import { ArrowLeft, Edit2, Save, Mail, Wallet, Calendar } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useWalletStore } from "@/store/wallet-store"
 import WaterButton from "@/components/water-button"
-import { useTransactionHistory } from "@/hooks/useTransactionHistory"
+import TransactionList from "@/components/transaction-list"
 
 export default function ProfilePage() {
   const router = useRouter()
   const { account, updateSettings, settings, transactions } = useWalletStore()
   const [isEditing, setIsEditing] = useState(false)
   const [displayName, setDisplayName] = useState(account?.name || "")
-  // Fetch transaction history
-  useTransactionHistory(account?.address)
+
+  console.log("Rendering ProfilePage, transactions:", transactions);
 
   if (!account) {
     return null
@@ -187,6 +187,9 @@ export default function ProfilePage() {
             <p className="text-xs text-muted-foreground">Sent</p>
           </div>
         </motion.div>
+
+        {/* Transaction List */}
+        <TransactionList />
 
         {/* Account Recovery */}
         <motion.div

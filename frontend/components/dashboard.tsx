@@ -19,7 +19,7 @@ import { useBalance } from "wagmi";
 import { useWalletStore } from "@/store/wallet-store";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import { LogOut } from "lucide-react";
-import { wagmiConfig } from "@/app/providers";
+import { wagmiConfig } from "@/hooks/wagmiConfig";
 import { RealTimePriceOracle } from "@/lib/priceOracle";
 import { getBalance } from "@wagmi/core";
 import { useAccount } from "wagmi";

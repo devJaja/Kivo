@@ -65,8 +65,6 @@ interface WalletStore {
   addTransaction: (tx: Transaction) => void
   updateTransaction: (id: string, updates: Partial<Transaction>) => void
   setTransactions: (transactions: Transaction[]) => void
-  transactionRefresher: number
-  triggerTransactionRefresh: () => void
 
   // Settings
   settings: WalletSettings
@@ -82,7 +80,6 @@ export const useWalletStore = create<WalletStore>()(
       balances: {},
       balancesLoading: false,
       transactions: [],
-      transactionRefresher: 0,
       settings: {
         displayName: "",
         analyticsOptIn: false,
@@ -113,8 +110,6 @@ export const useWalletStore = create<WalletStore>()(
           transactions: state.transactions.map((tx) => (tx.id === id ? { ...tx, ...updates } : tx)),
         })),
       setTransactions: (transactions) => set({ transactions }),
-      triggerTransactionRefresh: () =>
-        set((state) => ({ transactionRefresher: state.transactionRefresher + 1 })),
       updateSettings: (updates) =>
         set((state) => ({
           settings: {
