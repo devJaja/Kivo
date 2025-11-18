@@ -1,10 +1,28 @@
+export interface ArbitrageOpportunity {
+  id: string;
+  token: string;
+  fromChainName: string;
+  toChainName: string;
+  amount: string;
+  fromPrice: string;
+  toPrice: string;
+  profitPercent: number;
+  bridgeFee: string;
+  gasEstimate: string;
+  netProfit: string;
+  priceImpact: number;
+  liquidityDepth: string;
+}
+
+export interface AnalysisResult {
+  recommendation: 'execute' | 'monitor' | 'reject';
+  reasoning: string;
+  riskAssessment: string;
+  confidence: number;
+}
+
 export class ClaudeAIAnalyzer {
-  async analyzeOpportunity(opportunity: any): Promise<{
-    recommendation: 'execute' | 'monitor' | 'reject';
-    reasoning: string;
-    riskAssessment: string;
-    confidence: number;
-  }> {
+  async analyzeOpportunity(opportunity: ArbitrageOpportunity): Promise<AnalysisResult> {
     try {
       const prompt = `Analyze this arbitrage opportunity:
 
@@ -85,7 +103,7 @@ Respond ONLY in JSON format:
     }
   }
 
-  async getBatchAnalysis(opportunities: any[]): Promise<Map<string, any>> {
+  async getBatchAnalysis(opportunities: ArbitrageOpportunity[]): Promise<Map<string, AnalysisResult>> {
     const analyses = new Map();
 
     for (const opp of opportunities) {

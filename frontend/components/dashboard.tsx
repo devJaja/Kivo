@@ -22,13 +22,10 @@ import { LogOut } from "lucide-react";
 import { wagmiConfig } from "@/hooks/wagmiConfig";
 import { RealTimePriceOracle } from "@/lib/priceOracle";
 import { getBalance } from "@wagmi/core";
-import { useAccount } from "wagmi";
 
-// 👇 Inline wallet interface to avoid types/privy.d.ts
-interface ExtendedWallet {
-  address: string;
-  chainId?: string;
-}
+import { mainnet, sepolia, baseSepolia } from 'viem/chains';
+
+type AllowedChainId = typeof mainnet.id | typeof sepolia.id | typeof baseSepolia.id;
 
 type ModalType = "send" | "receive" | "swap" | "bridge" | null;
 
@@ -42,11 +39,7 @@ export default function Dashboard() {
   const { wallets } = useWallets();
   const { account, setAccount, setAuthenticated, setBalances, setBalancesLoading, setActiveChain } = useWalletStore();
   
-  useEffect(() => {
-    if (account) {
-      setIsLoading(false);
-    }
-  }, [account]);
+
 
   console.log('Debug: Privy User =', user);
   console.log('Debug: Privy Wallets =', wallets);
@@ -105,7 +98,7 @@ export default function Dashboard() {
                 const tokenBalanceData = await getBalance(wagmiConfig, {
                   address: activeAddress as `0x${string}`,
                   token: tokenAddress,
-                  chainId: activeChainId as any,
+                  chainId: activeChainId as AllowedChainId,
                 });
                 if (tokenBalanceData) {
                   newBalances[token] = tokenBalanceData.formatted;
@@ -120,11 +113,12 @@ export default function Dashboard() {
         console.log('Debug: All balances fetched =', newBalances);
         setBalances(activeChainId.toString(), newBalances);
         setBalancesLoading(false);
+        if (isLoading) setIsLoading(false);
       };
 
       fetchBalances();
     }
-  }, [activeAddress, activeChainId, nativeBalanceData, setBalances, setBalancesLoading]);
+  }, [activeAddress, activeChainId, nativeBalanceData, setBalances, setBalancesLoading, isLoading]);
 
 
   // Debug logs to help troubleshoot
@@ -166,8 +160,6 @@ export default function Dashboard() {
   };
 
   const handleCancelLogout = () => setShowLogoutConfirm(false);
-
-  const handleProfileClick = () => router.push("/profile");
 
   // Show loading or error states
   const ethBalance = nativeLoading 

@@ -1,6 +1,15 @@
 import { ethers } from 'ethers';
 import axios from 'axios';
 
+export interface Quote {
+  estimatedFillTime: number;
+  relayerFee: string;
+  lpFee: string;
+  totalFee: string;
+  netAmount: string;
+  isAmountTooLow: boolean;
+}
+
 export class RealAcrossQuote {
   private readonly ACROSS_API = 'https://across.to/api';
   
@@ -10,14 +19,7 @@ export class RealAcrossQuote {
     token: string;
     amount: string;
     recipient: string;
-  }): Promise<{
-    estimatedFillTime: number;
-    relayerFee: string;
-    lpFee: string;
-    totalFee: string;
-    netAmount: string;
-    isAmountTooLow: boolean;
-  } | null> {
+  }): Promise<Quote | null> {
     try {
       const response = await axios.get(`${this.ACROSS_API}/suggested-fees`, {
         params: {
@@ -59,7 +61,7 @@ export class RealAcrossQuote {
     token: string;
     amount: string;
     recipient: string;
-  }>): Promise<Map<string, any>> {
+  }>): Promise<Map<string, Quote | null>> {
     const quotes = new Map();
 
     for (const route of routes) {

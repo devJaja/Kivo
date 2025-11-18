@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { useWalletStore, Transaction } from '@/store/wallet-store';
-import { useAccount } from 'wagmi';
 import { parseEther, parseUnits } from 'viem';
 
 const API_KEY = process.env.NEXT_PUBLIC_BASESCAN_API_KEY;
@@ -63,7 +62,22 @@ export const useTransactionHistory = (address: string | undefined) => {
             ];
             const uniqueTransfers = Array.from(new Map(allTransfers.map(tx => [tx.uniqueId, tx])).values());
 
-            const formattedTransactions: Transaction[] = uniqueTransfers.map((tx: any) => {
+interface AlchemyTransfer {
+  uniqueId: string;
+  hash: string;
+  from: string;
+  to: string;
+  value: number;
+  asset: string;
+  rawContract: {
+    decimal: string;
+  };
+  metadata: {
+    blockTimestamp: string;
+  };
+}
+
+            const formattedTransactions: Transaction[] = uniqueTransfers.map((tx: AlchemyTransfer) => {
               let amountInWei;
               if (tx.asset === 'ETH') {
                 amountInWei = parseEther(tx.value.toString()).toString();
@@ -99,8 +113,17 @@ export const useTransactionHistory = (address: string | undefined) => {
           const data = await response.json();
           console.log("Fetched data:", data);
 
+interface BasescanTransaction {
+  hash: string;
+  from: string;
+  to: string;
+  value: string;
+  txreceipt_status: string;
+  timeStamp: string;
+}
+
           if (data.status === '1') {
-            const formattedTransactions = data.result.map((tx: any) => ({
+            const formattedTransactions = data.result.map((tx: BasescanTransaction) => ({
               id: tx.hash,
               hash: tx.hash,
               from: tx.from,
@@ -128,7 +151,7 @@ export const useTransactionHistory = (address: string | undefined) => {
     const intervalId = setInterval(fetchTransactions, 15000); // Poll every 15 seconds
 
     return () => clearInterval(intervalId); // Cleanup interval on unmount
-  }, [address, setTransactions]);
+  }, [address, setTransactions, activeChain]);
 
   return { transactions };
 };

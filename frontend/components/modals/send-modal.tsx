@@ -139,9 +139,13 @@ export default function SendModal({ onClose }: SendModalProps) {
         console.log("Transaction sent, hash:", txHash)
         // The modal will close once the transaction is confirmed or errors out via the useEffect below
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Transaction failed:", err)
-      setError(err.message || "Transaction failed. Please try again.")
+      if (err instanceof Error) {
+        setError(err.message || "Transaction failed. Please try again.")
+      } else {
+        setError("An unknown error occurred.")
+      }
       setIsLoading(false) // Stop loading on immediate error
     }
   }
