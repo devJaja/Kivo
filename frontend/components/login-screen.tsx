@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Mail, Github } from "lucide-react"
-import Button from "./ui/button"
+import { Button } from "./ui/button"
 
 interface LoginScreenProps {
   onAuthSuccess: () => void

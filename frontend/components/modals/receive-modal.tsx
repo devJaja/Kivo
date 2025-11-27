@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { X, Copy, Download } from "lucide-react";
-import Button from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { usePrivy } from "@privy-io/react-auth"; // Import usePrivy
 import { QRCodeCanvas } from "qrcode.react"; // Import QRCode
 

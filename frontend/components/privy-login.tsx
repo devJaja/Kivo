@@ -103,7 +103,7 @@ export default function PrivyLogin({
             "
           >
             <UserPlus size={24} />
-            <span>Sign Up with Google</span>
+            <span>Sign Up Or Log In</span>
           </button>
         </motion.div>
 

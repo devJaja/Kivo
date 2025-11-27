@@ -10,10 +10,9 @@ import {
   Loader2,
   X,
   Settings,
-  Info,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import Button from "./ui/button";
+import { Button } from "./ui/button";
 import {
   useArbitrageAgent,
   AgentSuggestion,

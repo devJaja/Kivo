@@ -15,9 +15,10 @@ import EnhancedAIAssistant from "@/components/ai-assistant";
 import ChainSelector from "@/components/chain-selector";
 import ProfileIcon from "@/components/profile-icon";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { useBalance } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
 import { useWalletStore } from "@/store/wallet-store";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
+import ArbitrageScanner from "@/components/arbitrage-scanner";
 import { LogOut } from "lucide-react";
 import { wagmiConfig } from "@/hooks/wagmiConfig";
 import { RealTimePriceOracle } from "@/lib/priceOracle";
@@ -38,12 +39,12 @@ export default function Dashboard() {
   const { user, logout } = usePrivy();
   const { wallets } = useWallets();
   const { account, setAccount, setAuthenticated, setBalances, setBalancesLoading, setActiveChain } = useWalletStore();
-  
-
+  const { chainId: wagmiChainId } = useAccount(); // Get chainId directly from wagmi
 
   console.log('Debug: Privy User =', user);
   console.log('Debug: Privy Wallets =', wallets);
   console.log('Debug: Wallet Store Account =', account);
+  console.log('Debug: Wagmi Chain ID =', wagmiChainId);
 
   // Find the active wallet that matches the address stored in useWalletStore
   const activeWallet = wallets.find(
@@ -54,7 +55,8 @@ export default function Dashboard() {
 
   console.log('Debug: Final activeAddress for useBalance =', activeAddress);
 
-  const activeChainId = activeWallet?.chainId ? parseInt(activeWallet.chainId.split(':')[1], 10) : 84532;
+  // Determine the activeChainId: prioritize wagmiChainId, then activeWallet.chainId, then default
+  const activeChainId = wagmiChainId || (activeWallet?.chainId ? parseInt(activeWallet.chainId.split(':')[1], 10) : 84532);
   
   console.log('Debug: activeAddress =', activeAddress, 'activeChainId =', activeChainId);
 
@@ -267,6 +269,15 @@ export default function Dashboard() {
             transition={{ delay: 0.3, duration: 0.4 }}
           >
             <TransactionList />
+          </motion.div>
+
+          {/* Arbitrage Scanner */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+          >
+            <ArbitrageScanner />
           </motion.div>
 
           {/* Feature Cards */}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
-import Button from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { usePrivy } from "@privy-io/react-auth"
 import { parseEther, parseUnits, encodeFunctionData, formatEther } from "viem"
 import { useWalletStore } from "@/store/wallet-store"

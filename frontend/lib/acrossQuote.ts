@@ -19,6 +19,7 @@ export class RealAcrossQuote {
     token: string;
     amount: string;
     recipient: string;
+    decimals: number; // Add decimals parameter
   }): Promise<Quote | null> {
     try {
       const response = await axios.get(`${this.ACROSS_API}/suggested-fees`, {
@@ -26,7 +27,7 @@ export class RealAcrossQuote {
           token: params.token,
           destinationChainId: params.destinationChainId,
           originChainId: params.originChainId,
-          amount: ethers.parseUnits(params.amount, 6).toString(), // Assuming 6 decimals
+          amount: ethers.parseUnits(params.amount, params.decimals).toString(), // Use dynamic decimals
           recipient: params.recipient,
         },
       });
@@ -39,14 +40,14 @@ export class RealAcrossQuote {
 
       const totalFee = BigInt(data.relayerFee.total) + BigInt(data.lpFee.total);
 
-      const netAmount = BigInt(params.amount) - totalFee;
+      const netAmount = BigInt(ethers.parseUnits(params.amount, params.decimals).toString()) - totalFee; // Use parsed amount for net amount calculation
 
       return {
         estimatedFillTime: data.estimatedFillTimeSec || 60,
-        relayerFee: ethers.formatUnits(data.relayerFee.total, 6),
-        lpFee: ethers.formatUnits(data.lpFee.total, 6),
-        totalFee: ethers.formatUnits(totalFee, 6),
-        netAmount: ethers.formatUnits(netAmount, 6),
+        relayerFee: ethers.formatUnits(data.relayerFee.total, params.decimals), // Use dynamic decimals
+        lpFee: ethers.formatUnits(data.lpFee.total, params.decimals), // Use dynamic decimals
+        totalFee: ethers.formatUnits(totalFee, params.decimals), // Use dynamic decimals
+        netAmount: ethers.formatUnits(netAmount, params.decimals), // Use dynamic decimals
         isAmountTooLow: false,
       };
     } catch (error) {
@@ -61,6 +62,7 @@ export class RealAcrossQuote {
     token: string;
     amount: string;
     recipient: string;
+    decimals: number; // Add decimals to route
   }>): Promise<Map<string, Quote | null>> {
     const quotes = new Map();
 

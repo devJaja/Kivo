@@ -1,54 +1,128 @@
 import React, { useState, useEffect } from 'react';
-import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { ChevronDown, ArrowDownUp, AlertCircle, Loader2 } from 'lucide-react';
+import { useAcrossBridge } from '@/hooks/useAcrossBridge'; // Import the hook
+import { parseUnits, Address, formatUnits } from 'viem';
+import { mainnet, base, arbitrum, optimism, baseSepolia, sepolia } from 'viem/chains';
+import { RealTimePriceOracle } from '@/lib/priceOracle';
 
-// Installation instructions:
-// npm install @across-protocol/app-sdk viem
+const priceOracle = new RealTimePriceOracle();
 
-// Import the Across SDK (add this at the top of your actual file)
-// import { across } from '@across-protocol/app-sdk';
+const isRouteKnownBroken = (fromChain: number, toChain: number, isNative: boolean) => {
+  // Known broken routes on testnet
+  const brokenRoutes = [
+    { from: sepolia.id, to: baseSepolia.id, native: true },
+    { from: baseSepolia.id, to: sepolia.id, native: true },
+  ];
+  
+  return brokenRoutes.some(
+    route => route.from === fromChain && route.to === toChain && route.native === isNative
+  );
+};
 
 const AcrossBridge = () => {
-  const { address, chain } = useAccount();
-  const publicClient = usePublicClient();
-  const { data: walletClient } = useWalletClient();
+  const { address, chainId } = useAccount();
+  const { getBridgeQuote, executeBridge } = useAcrossBridge(); // Use the modern hook
+
+  const bigIntReplacer = (key: string, value: any) => {
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+    return value;
+  };
 
   // Supported chains configuration
   const CHAINS = [
-    { id: 11155111, name: 'Ethereum Sepolia', shortName: 'ETH Sepolia' },
-    { id: 8453, name: 'Base', shortName: 'Base' },
-    { id: 84532, name: 'Base Sepolia', shortName: 'Base Sepolia' },
-    { id: 42161, name: 'Arbitrum One', shortName: 'Arbitrum' },
+    { id: mainnet.id, name: mainnet.name, shortName: 'ETH', chain: mainnet },
+    { id: base.id, name: base.name, shortName: 'Base', chain: base },
+    { id: arbitrum.id, name: arbitrum.name, shortName: 'Arbitrum', chain: arbitrum },
+    { id: optimism.id, name: optimism.name, shortName: 'Optimism', chain: optimism },
+    { id: baseSepolia.id, name: baseSepolia.name, shortName: 'Base Sepolia', chain: baseSepolia },
+    { id: sepolia.id, name: "Ethereum Sepolia", shortName: 'ETH Sepolia', chain: sepolia },
   ];
 
-  // Supported tokens
-  const TOKENS = [
-    { symbol: 'ETH', name: 'Ethereum', decimals: 18 },
-    { symbol: 'USDC', name: 'USD Coin', decimals: 6 },
-    { symbol: 'USDT', name: 'Tether', decimals: 6 },
-  ];
-
-  interface Quote {
-    estimatedFee: string;
-    receiveAmount: string;
-    estimatedTime: string;
+  // Internal representation of tokens, will be populated with addresses and decimals
+  interface TokenConfig {
+    symbol: string;
+    name: string;
+    decimals: number;
+    address: Address;
+    isNative: boolean;
   }
 
   // State management
-  const [fromChain, setFromChain] = useState(CHAINS[0]);
-  const [toChain, setToChain] = useState(CHAINS[1]);
-  const [selectedToken, setSelectedToken] = useState(TOKENS[0]);
+  const [fromChain, setFromChain] = useState(CHAINS.find(c => c.id === mainnet.id) || CHAINS[0]);
+  const [toChain, setToChain] = useState(CHAINS.find(c => c.id === base.id) || CHAINS[1]);
+  const [selectedToken, setSelectedToken] = useState<TokenConfig | null>(null);
   const [amount, setAmount] = useState('');
-  const [quote, setQuote] = useState<Quote | null>(null);
+  const [quote, setQuote] = useState<any>(null); // Use any for now, refine later
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [isBridging, setIsBridging] = useState(false);
   const [error, setError] = useState('');
   const [txHash, setTxHash] = useState('');
 
+  const [allTokensConfig, setAllTokensConfig] = useState<Record<number, TokenConfig[]>>({});
+
   // Dropdown states
   const [showFromChainDropdown, setShowFromChainDropdown] = useState(false);
   const [showToChainDropdown, setShowToChainDropdown] = useState(false);
   const [showTokenDropdown, setShowTokenDropdown] = useState(false);
+
+  // Initialize token configurations for all chains
+  useEffect(() => {
+    const newAllTokensConfig: Record<number, TokenConfig[]> = {};
+
+    CHAINS.forEach(chain => {
+      const supportedSymbols = priceOracle.getSupportedTokens(chain.id.toString());
+      const tokensForChain: TokenConfig[] = [];
+
+      // Add native ETH/WETH
+      tokensForChain.push({
+        symbol: chain.chain.nativeCurrency.symbol,
+        name: chain.chain.nativeCurrency.name,
+        decimals: chain.chain.nativeCurrency.decimals,
+        address: '0x0000000000000000000000000000000000000000', // ETH is 0 address for native
+        isNative: true,
+      });
+
+      supportedSymbols.forEach(symbol => {
+        const address = priceOracle.getTokenAddress(chain.id.toString(), symbol) as Address;
+        // Skip if address is '0x0' which indicates ETH if it's not the native token we added
+        if (address && address !== '0x0000000000000000000000000000000000000000') {
+          // You might need to fetch decimals for these ERC20s if not hardcoded in oracle
+          // For now, assume common decimals (e.g., USDC 6, DAI 18, USDT 6) or fetch
+          let decimals = 18; // Default for many
+          if (symbol === 'USDC' || symbol === 'USDT') decimals = 6;
+
+          tokensForChain.push({
+            symbol,
+            name: symbol, // Can improve with full name
+            decimals,
+            address,
+            isNative: false,
+          });
+        }
+      });
+      newAllTokensConfig[chain.id] = tokensForChain;
+    });
+    setAllTokensConfig(newAllTokensConfig);
+
+    // Set initial selected token for the fromChain
+    const defaultFromChain = CHAINS.find(c => c.id === mainnet.id) || CHAINS[0];
+    const defaultToken = newAllTokensConfig[defaultFromChain.id]?.find(t => t.symbol === 'WETH') || newAllTokensConfig[defaultFromChain.id]?.[0] || null;
+    setSelectedToken(defaultToken);
+  }, []);
+
+  // Update selected token when fromChain changes if current token not available
+  useEffect(() => {
+    if (allTokensConfig[fromChain.id] && selectedToken) {
+      const availableTokens = allTokensConfig[fromChain.id];
+      const tokenExists = availableTokens.some(token => token.symbol === selectedToken.symbol);
+      if (!tokenExists) {
+        setSelectedToken(availableTokens[0] || null);
+      }
+    }
+  }, [fromChain.id, allTokensConfig, selectedToken]);
 
   // Switch chains
   const handleSwitchChains = () => {
@@ -59,39 +133,58 @@ const AcrossBridge = () => {
   };
 
   // Get quote from Across
-  const getQuote = async () => {
+  const getAcrossQuote = async () => {
     if (!amount || parseFloat(amount) <= 0) {
+      setQuote(null);
+      return;
+    }
+    if (!address) {
+      setError('Please connect your wallet');
+      return;
+    }
+    if (!selectedToken || !selectedToken.address) {
+      setError('Please select a token with a valid address.');
+      return;
+    }
+
+    if (isRouteKnownBroken(fromChain.id, toChain.id, selectedToken.isNative)) {
+      setError('This route is temporarily unavailable due to testnet configuration. Please try WETH or different chains.');
       setQuote(null);
       return;
     }
 
     setIsLoadingQuote(true);
     setError('');
+    setQuote(null); // Clear previous quote
 
+    const outputTokenAddress = selectedToken.isNative
+      ? priceOracle.getTokenAddress(toChain.id.toString(), 'WETH') as Address
+      : priceOracle.getTokenAddress(toChain.id.toString(), selectedToken.symbol) as Address;
+
+    let bridgeQuote: any = null;
     try {
-      // This is a placeholder for the actual Across SDK quote call
-      // In production, you would use:
-      // const quote = await across.getQuote({
-      //   originChainId: fromChain.id,
-      //   destinationChainId: toChain.id,
-      //   token: selectedToken.symbol,
-      //   amount: parseUnits(amount, selectedToken.decimals),
-      //   recipient: address,
-      // });
+      bridgeQuote = await getBridgeQuote({
+        fromChainId: fromChain.id,
+        toChainId: toChain.id,
+        inputTokenAddress: selectedToken.address,
+        outputTokenAddress: outputTokenAddress || selectedToken.address, // fallback to same address
+        isNative: selectedToken.isNative,
+        amount: amount,
+        decimals: selectedToken.decimals,
+      });
 
-      // Simulated quote for demo purposes
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const estimatedFee = (parseFloat(amount) * 0.001).toFixed(6); // 0.1% fee estimate
-      const receiveAmount = (parseFloat(amount) - parseFloat(estimatedFee)).toFixed(6);
+      if (!bridgeQuote.deposit || !bridgeQuote.fees) {
+        setError('Failed to get bridge quote: invalid quote response. ' + JSON.stringify(bridgeQuote, bigIntReplacer));
+        return;
+      }
 
       setQuote({
-        estimatedFee,
-        receiveAmount,
-        estimatedTime: '1-3 minutes',
+        receiveAmountFormatted: formatUnits(bridgeQuote.deposit.outputAmount, selectedToken.decimals),
+        estimatedFeeFormatted: formatUnits(bridgeQuote.fees.totalRelayFee.total, selectedToken.decimals),
+        eta: bridgeQuote.estimatedFillTimeSec,
       });
-    } catch (err) {
-      setError('Failed to get quote. Please try again.');
+    } catch (err: any) {
+      setError('Failed to get quote: ' + (err.message || err.toString()) + ' ' + JSON.stringify(bridgeQuote, bigIntReplacer));
       console.error('Quote error:', err);
     } finally {
       setIsLoadingQuote(false);
@@ -102,16 +195,16 @@ const AcrossBridge = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (amount && parseFloat(amount) > 0) {
-        getQuote();
+        getAcrossQuote();
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [amount, fromChain, toChain, selectedToken]);
+  }, [amount, fromChain, toChain, selectedToken, address]); // Added address to dependencies
 
   // Execute bridge transaction
-  const handleBridge = async () => {
-    if (!address || !walletClient) {
+  const handleAcrossBridge = async () => {
+    if (!address) {
       setError('Please connect your wallet');
       return;
     }
@@ -121,44 +214,66 @@ const AcrossBridge = () => {
       return;
     }
 
+    if (!quote) {
+      setError('Please get a bridge quote first.');
+      return;
+    }
+
+    if (!selectedToken || !selectedToken.address) {
+      setError('Selected token details are incomplete.');
+      return;
+    }
+
+    if (chainId !== fromChain.id) {
+      setError(`Please switch your wallet to ${fromChain.name} (${fromChain.id}) to bridge from this chain.`);
+      return;
+    }
+
+    if (isRouteKnownBroken(fromChain.id, toChain.id, selectedToken.isNative)) {
+      setError('This route is temporarily unavailable due to testnet configuration. Please try WETH or different chains.');
+      return;
+    }
+
     setIsBridging(true);
     setError('');
     setTxHash('');
 
-    try {
-      // This is a placeholder for the actual Across SDK bridge call
-      // In production, you would use:
-      // 
-      // const bridge = await across.bridge({
-      //   originChainId: fromChain.id,
-      //   destinationChainId: toChain.id,
-      //   token: selectedToken.symbol,
-      //   amount: parseUnits(amount, selectedToken.decimals),
-      //   recipient: address,
-      //   walletClient,
-      // });
-      // 
-      // setTxHash(bridge.hash);
+    const outputTokenAddress = selectedToken.isNative
+      ? priceOracle.getTokenAddress(toChain.id.toString(), 'WETH') as Address
+      : priceOracle.getTokenAddress(toChain.id.toString(), selectedToken.symbol) as Address;
 
-      // Simulated transaction for demo
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const simulatedTxHash = '0x' + Array(64).fill(0).map(() => 
-        Math.floor(Math.random() * 16).toString(16)
-      ).join('');
-      
-      setTxHash(simulatedTxHash);
+    try {
+      await executeBridge({
+        fromChainId: fromChain.id,
+        toChainId: toChain.id,
+        inputTokenAddress: selectedToken.address,
+        outputTokenAddress: outputTokenAddress || selectedToken.address,
+        isNative: selectedToken.isNative,
+        amount: amount,
+        decimals: selectedToken.decimals,
+        recipient: address,
+      }, (progress) => {
+        console.log("Bridge Progress:", progress);
+        // You can update UI based on progress here
+        if (progress.step === 'fill' && progress.status === 'txSuccess' && progress.txReceipt) {
+          setTxHash(progress.txReceipt.transactionHash);
+        }
+      });
+
       setAmount('');
       setQuote(null);
+      // setTxHash is handled by the onProgress callback if fill is successful
       
-      alert('Bridge transaction submitted successfully!');
-    } catch (err) {
-      setError('Bridge transaction failed. Please try again.');
+      alert('Bridge transaction submitted successfully! Check your wallet for status.');
+    } catch (err: any) {
+      setError('Bridge transaction failed: ' + (err.message || err.toString()));
       console.error('Bridge error:', err);
     } finally {
       setIsBridging(false);
     }
   };
+
+
 
   return (
     <div className="max-w-lg mx-auto p-6 bg-white rounded-2xl shadow-lg">
@@ -244,12 +359,12 @@ const AcrossBridge = () => {
             onClick={() => setShowTokenDropdown(!showTokenDropdown)}
             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between hover:bg-gray-100 transition-colors"
           >
-            <span className="font-medium text-gray-900">{selectedToken.symbol}</span>
+            <span className="font-medium text-gray-900">{selectedToken?.symbol || 'Select Token'}</span>
             <ChevronDown className="w-5 h-5 text-gray-500" />
           </button>
           {showTokenDropdown && (
             <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg">
-              {TOKENS.map((token) => (
+              {allTokensConfig[fromChain.id]?.map((token) => (
                 <button
                   key={token.symbol}
                   onClick={() => {
@@ -295,16 +410,16 @@ const AcrossBridge = () => {
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">You will receive</span>
             <span className="font-semibold text-gray-900">
-              {quote.receiveAmount} {selectedToken.symbol}
+              {quote.receiveAmountFormatted} {selectedToken?.symbol}
             </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Estimated fee</span>
-            <span className="text-gray-900">{quote.estimatedFee} {selectedToken.symbol}</span>
+            <span className="text-gray-900">{quote.estimatedFeeFormatted} {selectedToken?.symbol}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Estimated time</span>
-            <span className="text-gray-900">{quote.estimatedTime}</span>
+            <span className="text-gray-900">{quote.eta ? `${Math.ceil(quote.eta / 60)} minutes` : 'N/A'}</span>
           </div>
         </div>
       )}
@@ -327,8 +442,8 @@ const AcrossBridge = () => {
 
       {/* Bridge Button */}
       <button
-        onClick={handleBridge}
-        disabled={!address || !amount || parseFloat(amount) <= 0 || isBridging || isLoadingQuote}
+        onClick={handleAcrossBridge}
+        disabled={!address || !amount || parseFloat(amount) <= 0 || isBridging || isLoadingQuote || !quote}
         className="w-full py-4 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
       >
         {isBridging ? (
