@@ -6,7 +6,7 @@
 
 ##  What is Kivo?
 
-**Kivo** is not just another crypto wallet — it's your intelligent companion in the Web3 world. Forget about confusing private keys, expensive gas fees, and complex transactions. Kivo handles all of that for you.
+**Kivo** is not just another crypto wallet — it's your intelligent companion in the Web3 world. Forget about confusing private keys, expensive gas fees, and complex transactions. Kivo handles all of that for you.Kivo provides arbitrage opportunities powered by an AI agent.
 
 ###  Why Choose Kivo?
 
