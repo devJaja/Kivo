@@ -12,8 +12,8 @@
 
 -  **No More Seed Phrases** - Say goodbye to 12-word nightmares. Your wallet, simplified.
 -  **Gasless Transactions** - We cover the fees so you don't have to worry about them.
--  **AI-Powered** - Smart recommendations for the best chains and opportunities.
--  **Multi-Chain Ready** - Seamlessly operate across different blockchains.
+-  **AI-Powered** - Smart recommendations for the best chains and arbitrage opportunities.
+-  **Multi-Chain Ready** - Seamlessly bridge operate across different blockchains.
 -  **Built for Everyone** - Whether you're a crypto newbie or a DeFi expert, Kivo works for you.
 
 ---
@@ -82,8 +82,8 @@ Want to contribute or run Kivo locally?
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/kivo.git
-cd kivo
+git clone https://github.com/devJaja/kivo.git
+cd kivo/frontend
 
 # 2. Install dependencies
 npm install
@@ -134,9 +134,9 @@ We're a passionate group of blockchain enthusiasts, smart contract wizards, and 
 ##  Roadmap
 
 - [x] **Q1 2025** - Account Abstraction MVP
-- [ ] **Q2 2025** - Base Mainnet Launch
+- [ ] **Q2 2025** - Base Testnet Launch
 - [ ] **Q3 2025** - AI Agent Integration
-- [ ] **Q4 2025** - Multi-chain Expansion
+- [ ] **Q4 2025** - Multi-chain Briging Expansion
 
 ---
 
